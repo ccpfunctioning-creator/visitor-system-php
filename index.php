@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<?php include 'templates/header.php'; ?>
+<?php include 'header.php'; ?>
 
 <?php if ($successData): ?>
     <!-- Render Success Ticket Generation Framework Container Layout -->
