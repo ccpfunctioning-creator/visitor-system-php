@@ -119,9 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="text-secondary small mb-2">Please present this secure verification QR code below to the security officer on desk duty at Gate 2 checkpoints.</p>
             
             <!-- Render the embedded base64 code string directly -->
+            <!-- Old broken image link row block -->
             <div class="qr-frame">
                 <img src="<?php echo $successData['qr']; ?>" style="width: 200px; height: 200px; display: block;" alt="Gate Pass QR Pass">
             </div>
+
             
             <h4 class="fw-bold mb-1 text-dark"><?php echo htmlspecialchars($successData['name']); ?></h4>
             <div class="d-flex gap-2 justify-content-center align-items-center mb-4">
