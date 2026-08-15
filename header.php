@@ -1,3 +1,10 @@
+<?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+$isLoggedIn = isset($_SESSION['username']);
+$userRole = $_SESSION['role'] ?? '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -89,11 +96,23 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark p-3">
     <div class="container">
-        <a class="navbar-brand" href="#">VRS Gateway (PHP)</a>
-        <div class="navbar-nav ms-auto gap-2">
-            <a class="nav-link text-white" href="index.php">Gate 1 Entry</a>
-            <a class="nav-link text-white" href="gate2.php">Gate 2 Queue</a>
-            <a class="nav-link text-white" href="admin.php">Admin Control</a>
+        <a class="navbar-brand" href="index.php">VRS Gateway (PHP)</a>
+        <div class="navbar-nav ms-auto gap-2 align-items-center">
+            <!-- Gate 1 registration form always remains open to visitors -->
+            <a class="nav-link text-white small" href="index.php">Gate 1 Entry</a>
+            
+            <?php if ($isLoggedIn): ?>
+                <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
+                    <a class="nav-link text-white small" href="gate2.php">Gate 2 Desk</a>
+                <?php endif; ?>
+                <?php if ($userRole === 'admin'): ?>
+                    <a class="nav-link text-white small" href="admin.php">Admin panel</a>
+                <?php endif; ?>
+                <span class="navbar-text text-secondary mx-2 small">| Signed in as: <strong><?php echo $_SESSION['username']; ?></strong></span>
+                <a class="btn btn-sm btn-outline-danger px-3 py-1" href="logout.php">Logout</a>
+            <?php else: ?>
+                <a class="btn btn-sm btn-outline-light px-3 py-1" href="login.php">Internal Staff Sign In</a>
+            <?php endif; ?>
         </div>
     </div>
 </nav>
