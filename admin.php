@@ -41,7 +41,7 @@ $stmt->execute($params);
 $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
-<?php include 'templates/header.php'; ?>
+<?php include 'header.php'; ?>
 <div class="w-100">
     <h3>Admin Command Control Workspace</h3>
     <div class="card p-3 my-4 border-0 shadow-sm bg-white">
