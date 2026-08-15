@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $lastId = $db->lastInsertId();
         
-        // Protocol & host construction
+        // Protocol and host auto-lookup for Render URLs
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
         $host = $_SERVER['HTTP_HOST'];
         
@@ -59,20 +59,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $lastId;
         
+        // 🚀 SAFE GOOGLE CHARTS QR ENGINE LINK (Bypasses security blocks)
+        $qrImage = "https://googleapis.com" . urlencode($verificationUrl) . "&amp;choe=UTF-8";
+        
         $successData = [
+            'qr' => $qrImage,
             'name' => $visitorName, 
             'cid' => $visitorCid, 
-            'type' => $visitorType,
-            'url' => $verificationUrl
+            'type' => $visitorType
         ];
     }
 }
 ?>
 
 <?php include 'header.php'; ?>
-
-<!-- 🚀 Inject safe, lightweight browser-based QR engine -->
-<script src="https://cloudflare.com"></script>
 
 <style>
     .animate-fade-in {
@@ -85,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         padding: 1.25rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         display: inline-block;
+        margin: 1.5rem auto;
     }
     .horizontal-field-row {
         display: flex;
@@ -119,15 +120,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ✅ Record Registered Successfully
             </div>
             
-            <p class="text-secondary small mb-4">Please save or present this digital token receipt directly to the officer on desk duty at Gate 2 checkpoints.</p>
+            <p class="text-secondary small mb-2">Please present this secure verification QR code below to the security officer on desk duty at Gate 2 checkpoints.</p>
             
-            <!-- Safe, Pure HTML DOM Canvas container box wrapper element for JavaScript injection -->
-            <div class="qr-frame mb-4">
-                <div id="qrcodeCanvas"></div>
+            <!-- QR Frame Box with Direct Google Chart Image -->
+            <div class="qr-frame">
+                <img src="<?php echo $successData['qr']; ?>" style="width: 200px; height: 200px; display: block;" alt="Gate Pass QR Pass">
             </div>
             
             <h4 class="fw-bold mb-1 text-dark"><?php echo htmlspecialchars($successData['name']); ?></h4>
-            <div class="d-flex gap-2 justify-content-center align-items-center mb-3">
+            <div class="d-flex gap-2 justify-content-center align-items-center mb-4">
                 <span class="badge bg-light text-secondary border px-2 py-1.5 small font-monospace">CID: <?php echo htmlspecialchars($successData['cid']); ?></span>
                 <span class="badge bg-primary px-2 py-1.5 text-white small" style="background-color: #6366f1;"><?php echo $successData['type']; ?> Visit</span>
             </div>
@@ -139,18 +140,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
         </div>
     </div>
-
-    <script>
-        // Generate the QR code using client browser hardware
-        new QRCode(document.getElementById("qrcodeCanvas"), {
-            text: "<?php echo $successData['url']; ?>",
-            width: 200,
-            height: 200,
-            colorDark : "#1e1b4b",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-    </script>
 
 <?php else: ?>
     <!-- 📋 Entry Form Layout Container Framework Wrapper Page -->
@@ -192,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="horizontal-field-row">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Inmate Full Name</label>
                         <div style="width: 70%;">
-                            <input type="text" name="inmateName" class="form-control target-field shadow-sm" placeholder="Enter Inmate Legal First & Last Name">
+                            <input type="text" name="inmateName" class="form-control target-field shadow-sm" placeholder="Enter Inmate Legal First &amp; Last Name">
                         </div>
                     </div>
                     
@@ -206,8 +195,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                     </div>
-                    
+
                     <div class="horizontal-field-row mb-0">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Relationship with Inmate</label>
+                        <div style="width: 70%;">
                             <input type="text" name="relationship" class="form-control target-field shadow-sm" placeholder="e.g. Spouse, Sibling, Legal Representative">
                         </div>
                     </div>
@@ -217,14 +208,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="section-container mt-4">
                     <div class="form-section-title">Visitor Identification Profile</div>
                     
-                    <div class="horizontal-field-row mb-3">
+                    <div class="horizontal-field-row">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor Full Name</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorName" class="form-control shadow-sm" placeholder="Enter your full legal name" required>
                         </div>
                     </div>
                     
-                    <div class="horizontal-field-row mb-3">
+                    <div class="horizontal-field-row">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor National CID</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorCid" class="form-control shadow-sm" placeholder="Enter your official card identifier numbers" required>
