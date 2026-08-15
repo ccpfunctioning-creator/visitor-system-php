@@ -1,4 +1,11 @@
 <?php
+session_start();
+// Only Admin roles are cleared to run financial and registry database timeline audits
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
+    header('Location: login.php');
+    exit;
+}
+
 require_once 'db.php';
 
 $startDate = isset($_GET['startDate']) ? $_GET['startDate'] : '';
