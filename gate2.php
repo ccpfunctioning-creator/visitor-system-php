@@ -1,4 +1,11 @@
 <?php
+session_start();
+// Both Gate 2 and Admin roles are cleared to manage security verification desk tasks
+if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'gate2' && $_SESSION['role'] !== 'admin')) {
+    header('Location: login.php');
+    exit;
+}
+
 require_once 'db.php';
 
 // Process instant status updates
