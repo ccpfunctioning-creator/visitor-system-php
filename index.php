@@ -49,32 +49,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $lastId = $db->lastInsertId();
         
-        // 🚀 BULLETPROOF PROTOCOL & HOST LOOKUP FOR DETECTING RENDER AND DOCKER
+        // Protocol & host construction
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
         $host = $_SERVER['HTTP_HOST'];
         
-        // Strip out internal Docker hostnames or fallback safely if necessary
         if (strpos($host, 'render.local') !== false || $host === 'localhost' || $host === '127.0.0.1') {
             $host = '://onrender.com'; 
         }
         
-        // Clean URL mapping to ensure no trailing script extension errors
         $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $lastId;
         
-        // Clean QR Code Request String to prevent API interpretation drops
-        $qrImage = "https://qrserver.com" . urlencode($verificationUrl);
-        
         $successData = [
-            'qr' => $qrImage, 
             'name' => $visitorName, 
             'cid' => $visitorCid, 
-            'type' => $visitorType
+            'type' => $visitorType,
+            'url' => $verificationUrl
         ];
     }
 }
 ?>
 
 <?php include 'header.php'; ?>
+
+<!-- 🚀 Inject safe, lightweight browser-based QR engine -->
+<script src="https://cloudflare.com"></script>
 
 <style>
     .animate-fade-in {
@@ -86,6 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         border-radius: 20px;
         padding: 1.25rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+        display: inline-block;
     }
     .horizontal-field-row {
         display: flex;
@@ -122,9 +121,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <p class="text-secondary small mb-4">Please save or present this digital token receipt directly to the officer on desk duty at Gate 2 checkpoints.</p>
             
-            <!-- Fixed Img Tag Source Layout Block -->
-            <div class="qr-frame mb-4" style="width: 254px; height: 254px; display: flex; align-items: center; justify-content: center;">
-                <img src="<?php echo $successData['qr']; ?>" style="width: 210px; height: 210px; display: block;" alt="Verification Pass QR Token">
+            <!-- Safe, Pure HTML DOM Canvas container box wrapper element for JavaScript injection -->
+            <div class="qr-frame mb-4">
+                <div id="qrcodeCanvas"></div>
             </div>
             
             <h4 class="fw-bold mb-1 text-dark"><?php echo htmlspecialchars($successData['name']); ?></h4>
@@ -140,6 +139,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
         </div>
     </div>
+
+    <script>
+        // Generate the QR code using client browser hardware
+        new QRCode(document.getElementById("qrcodeCanvas"), {
+            text: "<?php echo $successData['url']; ?>",
+            width: 200,
+            height: 200,
+            colorDark : "#1e1b4b",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+    </script>
+
 <?php else: ?>
     <!-- 📋 Entry Form Layout Container Framework Wrapper Page -->
     <div class="beautiful-card mx-auto animate-fade-in">
@@ -196,7 +208,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <div class="horizontal-field-row mb-0">
-                        <label class="form-label text-secondary m-0" style="width: 30%;">Relationship with Inmate</label>
                             <input type="text" name="relationship" class="form-control target-field shadow-sm" placeholder="e.g. Spouse, Sibling, Legal Representative">
                         </div>
                     </div>
