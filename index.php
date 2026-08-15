@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once 'db.php';
-require_once 'qr_engine.php'; // Load our new secure offline QR engine
 
 $successData = null;
 $errorMessage = null;
@@ -56,20 +55,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $lastId;
         
-        // 🚀 GENERATE NATIVE OFFLINE QR BARCODE PASS TO BYPASS ALL NETWORK BLOCKS
-        $localQrCode = generateNativeQR($verificationUrl);
-        
         $successData = [
-            'qr' => $localQrCode,
             'name' => $visitorName, 
             'cid' => $visitorCid, 
-            'type' => $visitorType
+            'type' => $visitorType,
+            'url' => $verificationUrl
         ];
     }
 }
 ?>
 
 <?php include 'header.php'; ?>
+
+<!-- 🚀 Load the professional browser-side QR engine library -->
+<script src="https://cloudflare.com"></script>
 
 <style>
     .animate-fade-in {
@@ -79,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         background: #ffffff;
         border: 2px dashed #cbd5e1;
         border-radius: 20px;
-        padding: 1.25rem;
+        padding: 1.5rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
         display: inline-block;
         margin: 1.5rem auto;
@@ -107,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container py-4">
 <?php if ($successData): ?>
+    <!-- 📄 Digital Token Pass Layout View -->
     <div class="beautiful-card mx-auto my-3 text-center animate-fade-in" style="max-width: 500px;">
         <div class="card-header-gradient py-4">
             <h4 class="m-0 fw-bold">✨ Access Pass Token Issued</h4>
@@ -118,14 +118,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <p class="text-secondary small mb-2">Please present this secure verification QR code below to the security officer on desk duty at Gate 2 checkpoints.</p>
             
-            <!-- Render the embedded base64 code string directly -->
-            <!-- Old broken image link row block -->
-            <!-- New bulletproof local text rendering row block -->
-            <div class="mb-4">
-                <?php echo $successData['qr']; ?>
+            <!-- Standard HTML5 Canvas element block where Javascript draws the clean code matrix -->
+            <div class="qr-frame">
+                <canvas id="qrCanvasCode"></canvas>
             </div>
-
-
             
             <h4 class="fw-bold mb-1 text-dark"><?php echo htmlspecialchars($successData['name']); ?></h4>
             <div class="d-flex gap-2 justify-content-center align-items-center mb-4">
@@ -141,7 +137,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 
+    <script>
+        // Use browser engine parameters to render a perfectly standard scannable canvas layout matrix
+        var qr = new QRious({
+            element: document.getElementById('qrCanvasCode'),
+            value: "<?php echo $successData['url']; ?>",
+            size: 220,
+            background: '#ffffff',
+            foreground: '#1e1b4b',
+            level: 'H'
+        });
+    </script>
+
 <?php else: ?>
+    <!-- 📋 Entry Form Layout Container Framework Wrapper Page -->
     <div class="beautiful-card mx-auto animate-fade-in">
         <div class="card-header-gradient">
             <h4 class="m-0 fw-bold">Gate 1: Visitor Entry Registration Desk</h4>
@@ -203,17 +212,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
+                <!-- Block Section: Submitting Visitor Data Elements -->
                 <div class="section-container mt-4">
                     <div class="form-section-title">Visitor Identification Profile</div>
                     
-                    <div class="horizontal-field-row mb-3">
+                    <div class="horizontal-field-row">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor Full Name</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorName" class="form-control shadow-sm" placeholder="Enter your full legal name" required>
                         </div>
                     </div>
                     
-                    <div class="horizontal-field-row mb-3">
+                    <div class="horizontal-field-row">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor National CID</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorCid" class="form-control shadow-sm" placeholder="Enter your official card identifier numbers" required>
