@@ -27,7 +27,7 @@ if ($searchId) {
 }
 ?>
 
-<?php include 'templates/header.php'; ?>
+<?php include 'header.php'; ?>
 <div class="w-100">
     <h3 class="mb-4">Gate 2: Document Verification Registry Desk</h3>
     <div class="row">
