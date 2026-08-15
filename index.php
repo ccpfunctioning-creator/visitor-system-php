@@ -49,18 +49,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $lastId = $db->lastInsertId();
         
-        // 🚀 BULLETPROOF DOCKER & RENDER PUBLIC URL AUTO-DETECTION
+        // Robust Docker & Render Public URL Auto-Detection
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
         $host = $_SERVER['HTTP_HOST'];
         
-        // If Docker inside Render outputs internal network IDs, fallback to your public app name cleanly
         if (strpos($host, 'render.local') !== false || $host === 'localhost' || $host === '127.0.0.1') {
             $host = '://onrender.com'; 
         }
         
         $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $lastId;
-        
-        // Premium, clean high-resolution QR configuration parameters link
         $qrImage = "https://qrserver.com" . urlencode($verificationUrl);
         
         $successData = [
@@ -77,9 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php include 'header.php'; ?>
 
 <style>
-    /* Professional Layout Enhancements */
     .animate-fade-in {
-        animation: fadeIn 0.5s ease-out forwards;
+        animation: fadeIn 0.4s ease-out forwards;
     }
     .qr-frame {
         background: #ffffff;
@@ -87,20 +83,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         border-radius: 20px;
         padding: 1.25rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-        transition: transform 0.3s ease;
     }
-    .qr-frame:hover {
-        transform: scale(1.02);
+    /* Horizontal Field Alignment Adjustments */
+    .horizontal-field-row {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.25rem;
+    }
+    @media (max-width: 768px) {
+        .horizontal-field-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .horizontal-field-row label {
+            margin-bottom: 0.25rem !important;
+            width: 100% !important;
+        }
     }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(15px); }
+        from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
     }
 </style>
 
 <div class="container py-4">
 <?php if ($successData): ?>
-    <!-- 📄 Ultra-Professional Digital Token Pass Layout View -->
+    <!-- 📄 Digital Token Pass Layout View -->
     <div class="beautiful-card mx-auto my-3 text-center animate-fade-in" style="max-width: 500px;">
         <div class="card-header-gradient py-4">
             <h4 class="m-0 fw-bold">✨ Access Pass Token Issued</h4>
@@ -112,18 +120,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <p class="text-secondary small mb-4">Please save or present this digital token receipt directly to the officer on desk duty at Gate 2 checkpoints.</p>
             
-            <!-- Secure QR Container Framework Block -->
             <div class="qr-frame mb-4">
-                <img src="<?php echo $successData['qr']; ?>" 
-                     style="width: 210px; height: 210px; display: block;" 
-                     alt="Verification Pass QR Token"
-                     onerror="this.onerror=null; this.src='https://qrserver.com<?php echo urlencode($successData['url']); ?>';">
+                <img src="<?php echo $successData['qr']; ?>" style="width: 210px; height: 210px; display: block;" alt="Verification Pass QR Token">
             </div>
             
             <h4 class="fw-bold mb-1 text-dark"><?php echo htmlspecialchars($successData['name']); ?></h4>
             <div class="d-flex gap-2 justify-content-center align-items-center mb-3">
                 <span class="badge bg-light text-secondary border px-2 py-1.5 small font-monospace">CID: <?php echo htmlspecialchars($successData['cid']); ?></span>
-                <span class="badge bg-purple px-2 py-1.5 text-white small" style="background-color: #6366f1;"><?php echo $successData['type']; ?> Segment</span>
+                <span class="badge bg-primary px-2 py-1.5 text-white small" style="background-color: #6366f1;"><?php echo $successData['type']; ?> Visit</span>
             </div>
             
             <hr class="w-100 text-muted my-3">
@@ -145,67 +149,86 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php endif; ?>
             
             <form action="index.php" method="POST" enctype="multipart/form-data">
-                <div class="mb-4">
-                    <label class="form-label text-dark fw-bold">Visitor Classification Category</label>
-                    <select name="visitorType" id="visitorType" class="form-select shadow-sm" required>
-                        <option value="Personal">👪 Personal Visit</option>
-                        <option value="Official">💼 Official Business</option>
-                        <option value="Conjugal">💍 Conjugal Visit</option>
-                        <option value="Night Visitor">🌙 Night Visitor</option>
-                        <option value="Others">⚙️ Others (Collapses Inmate Fields)</option>
-                    </select>
+                
+                <!-- Category Field Row Alignment -->
+                <div class="horizontal-field-row">
+                    <label class="form-label text-dark fw-bold m-0" style="width: 30%;">Visitor Classification</label>
+                    <div style="width: 70%;">
+                        <select name="visitorType" id="visitorType" class="form-select shadow-sm" required>
+                            <option value="Personal">👪 Personal Visit</option>
+                            <option value="Official">💼 Official Business</option>
+                            <option value="Conjugal">💍 Conjugal Visit</option>
+                            <option value="Night Visitor">🌙 Night Visitor</option>
+                            <option value="Others">⚙️ Others (Collapses Inmate Fields)</option>
+                        </select>
+                    </div>
                 </div>
 
                 <!-- Block Section: Target Inmate Data Elements -->
-                <div id="inmateSection" class="section-container">
+                <div id="inmateSection" class="section-container mt-4">
                     <div class="form-section-title">Inmate Identification Parameters</div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Inmate National CID No.</label>
-                        <input type="text" name="inmateCid" id="inmateCid" class="form-control" placeholder="Enter Inmate Identification Account Number">
-                        <div id="banStatus" class="alert alert-danger p-2 mt-2 small fw-bold d-none"></div>
+                    
+                    <div class="horizontal-field-row">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Inmate National CID</label>
+                        <div style="width: 70%;">
+                            <input type="text" name="inmateCid" id="inmateCid" class="form-control shadow-sm" placeholder="Enter Inmate Identification Card Number">
+                            <div id="banStatus" class="alert alert-danger p-2 mt-2 json-alert small fw-bold d-none"></div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Inmate Full Name</label>
-                        <input type="text" name="inmateName" class="form-control target-field" placeholder="Enter Inmate Legal First & Last Name">
+                    
+                    <div class="horizontal-field-row">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Inmate Full Name</label>
+                        <div style="width: 70%;">
+                            <input type="text" name="inmateName" class="form-control target-field shadow-sm" placeholder="Enter Inmate Legal First & Last Name">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Cell Block Assignment Location</label>
-                        <select name="block" class="form-select target-field">
-                            <option value="Block I">Block I</option>
-                            <option value="Block II">Block II</option>
-                            <option value="Block III">Block III</option>
-                            <option value="Block IV">Block IV</option>
-                            <option value="Block V">Block V</option>
-                            <option value="Block VI">Block VI</option>
-                            <option value="Block VII">Block VII</option>
-                            <option value="Block VIII">Block VIII</option>
-                            <option value="Block IX">Block IX</option>
-                        </select>
+                    
+                    <div class="horizontal-field-row">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Cell Block Location</label>
+                        <div style="width: 70%;">
+                            <select name="block" class="form-select target-field shadow-sm">
+                                <option value="Block I">Block I</option><option value="Block II">Block II</option><option value="Block III">Block III</option>
+                                <option value="Block IV">Block IV</option><option value="Block V">Block V</option><option value="Block VI">Block VI</option>
+                                <option value="Block VII">Block VII</option><option value="Block VIII">Block VIII</option><option value="Block IX">Block IX</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label class="form-label text-secondary">Relationship with Inmate</label>
-                        <input type="text" name="relationship" class="form-control target-field" placeholder="e.g. Spouse, Sibling, Legal Representative">
+                    
+                    <div class="horizontal-field-row mb-0">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Relationship with Inmate</label>
+                        <div style="width: 70%;">
+                            <input type="text" name="relationship" class="form-control target-field shadow-sm" placeholder="e.g. Spouse, Sibling, Legal Representative">
+                        </div>
                     </div>
                 </div>
 
                 <!-- Block Section: Submitting Visitor Data Elements -->
-                <div class="section-container">
+                <div class="section-container mt-4">
                     <div class="form-section-title">Visitor Identification Profile</div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Visitor Full Name</label>
-                        <input type="text" name="visitorName" class="form-control" placeholder="Enter your full legal name" required>
+                    
+                    <div class="horizontal-field-row">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Visitor Full Name</label>
+                        <div style="width: 70%;">
+                            <input type="text" name="visitorName" class="form-control shadow-sm" placeholder="Enter your full legal name" required>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label text-secondary">Visitor National CID Card Number</label>
-                        <input type="text" name="visitorCid" class="form-control" placeholder="Enter your official card identifier numbers" required>
+                    
+                    <div class="horizontal-field-row">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Visitor National CID</label>
+                        <div style="width: 70%;">
+                            <input type="text" name="visitorCid" class="form-control shadow-sm" placeholder="Enter your official card identifier numbers" required>
+                        </div>
                     </div>
-                    <div class="mb-0">
-                        <label class="form-label text-secondary">Upload Official CID Photo Identification Document</label>
-                        <input type="file" name="cidPhoto" class="form-control" accept="image/*" required>
+                    
+                    <div class="horizontal-field-row mb-0">
+                        <label class="form-label text-secondary m-0" style="width: 30%;">Upload CID Document</label>
+                        <div style="width: 70%;">
+                            <input type="file" name="cidPhoto" class="form-control shadow-sm" accept="image/*" required>
+                        </div>
                     </div>
                 </div>
 
-                <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-3 mt-2 fw-bold text-white shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; font-size: 1.05rem; border-radius: 14px;">
+                <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-3 mt-3 fw-bold text-white shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; font-size: 1.05rem; border-radius: 14px;">
                     Verify Credentials & Issue Pass Ticket Token
                 </button>
             </form>
