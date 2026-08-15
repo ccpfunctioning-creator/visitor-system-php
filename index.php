@@ -1,10 +1,10 @@
 <?php
-// Initialize session cleanly at the absolute top of the stack
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 require_once 'db.php';
+require_once 'qr_engine.php'; // Load our new secure offline QR engine
 
 $successData = null;
 $errorMessage = null;
@@ -19,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $block = ($visitorType === 'Others') ? null : ($_POST['block'] ?? '');
     $relationship = ($visitorType === 'Others') ? null : ($_POST['relationship'] ?? '');
 
-    // Backend validation against banned inmates collection
     if ($visitorType !== 'Others' && !empty($inmateCid)) {
         $checkBan = $db->prepare("SELECT COUNT(*) FROM banned_inmates WHERE inmateCid = ?");
         $checkBan->execute([$inmateCid]);
@@ -28,7 +27,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // Process file upload securely
     $photoPath = '';
     if (!$errorMessage && isset($_FILES['cidPhoto']) && $_FILES['cidPhoto']['error'] === 0) {
         $targetDir = "uploads/";
@@ -49,7 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $lastId = $db->lastInsertId();
         
-        // Protocol and host auto-lookup for Render URLs
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
         $host = $_SERVER['HTTP_HOST'];
         
@@ -59,11 +56,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $lastId;
         
-        // 🚀 SAFE GOOGLE CHARTS QR ENGINE LINK (Bypasses security blocks)
-        $qrImage = "https://googleapis.com" . urlencode($verificationUrl) . "&amp;choe=UTF-8";
+        // 🚀 GENERATE NATIVE OFFLINE QR BARCODE PASS TO BYPASS ALL NETWORK BLOCKS
+        $localQrCode = generateNativeQR($verificationUrl);
         
         $successData = [
-            'qr' => $qrImage,
+            'qr' => $localQrCode,
             'name' => $visitorName, 
             'cid' => $visitorCid, 
             'type' => $visitorType
@@ -110,7 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container py-4">
 <?php if ($successData): ?>
-    <!-- 📄 Digital Token Pass Layout View -->
     <div class="beautiful-card mx-auto my-3 text-center animate-fade-in" style="max-width: 500px;">
         <div class="card-header-gradient py-4">
             <h4 class="m-0 fw-bold">✨ Access Pass Token Issued</h4>
@@ -122,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <p class="text-secondary small mb-2">Please present this secure verification QR code below to the security officer on desk duty at Gate 2 checkpoints.</p>
             
-            <!-- QR Frame Box with Direct Google Chart Image -->
+            <!-- Render the embedded base64 code string directly -->
             <div class="qr-frame">
                 <img src="<?php echo $successData['qr']; ?>" style="width: 200px; height: 200px; display: block;" alt="Gate Pass QR Pass">
             </div>
@@ -142,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
 <?php else: ?>
-    <!-- 📋 Entry Form Layout Container Framework Wrapper Page -->
     <div class="beautiful-card mx-auto animate-fade-in">
         <div class="card-header-gradient">
             <h4 class="m-0 fw-bold">Gate 1: Visitor Entry Registration Desk</h4>
@@ -204,18 +199,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <!-- Block Section: Submitting Visitor Data Elements -->
                 <div class="section-container mt-4">
                     <div class="form-section-title">Visitor Identification Profile</div>
                     
-                    <div class="horizontal-field-row">
+                    <div class="horizontal-field-row mb-3">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor Full Name</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorName" class="form-control shadow-sm" placeholder="Enter your full legal name" required>
                         </div>
                     </div>
                     
-                    <div class="horizontal-field-row">
+                    <div class="horizontal-field-row mb-3">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor National CID</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorCid" class="form-control shadow-sm" placeholder="Enter your official card identifier numbers" required>
@@ -231,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
 
                 <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-3 mt-3 fw-bold text-white shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; font-size: 1.05rem; border-radius: 14px;">
-                    Verify Credentials & Issue Pass Ticket Token
+                    Verify Credentials &amp; Issue Pass Ticket Token
                 </button>
             </form>
         </div>
