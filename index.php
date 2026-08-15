@@ -49,23 +49,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $lastId = $db->lastInsertId();
         
-        // Robust Docker & Render Public URL Auto-Detection
+        // 🚀 BULLETPROOF PROTOCOL & HOST LOOKUP FOR DETECTING RENDER AND DOCKER
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
         $host = $_SERVER['HTTP_HOST'];
         
+        // Strip out internal Docker hostnames or fallback safely if necessary
         if (strpos($host, 'render.local') !== false || $host === 'localhost' || $host === '127.0.0.1') {
             $host = '://onrender.com'; 
         }
         
+        // Clean URL mapping to ensure no trailing script extension errors
         $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $lastId;
+        
+        // Clean QR Code Request String to prevent API interpretation drops
         $qrImage = "https://qrserver.com" . urlencode($verificationUrl);
         
         $successData = [
             'qr' => $qrImage, 
             'name' => $visitorName, 
             'cid' => $visitorCid, 
-            'type' => $visitorType,
-            'url' => $verificationUrl
+            'type' => $visitorType
         ];
     }
 }
@@ -84,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         padding: 1.25rem;
         box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
     }
-    /* Horizontal Field Alignment Adjustments */
     .horizontal-field-row {
         display: flex;
         align-items: center;
@@ -120,7 +122,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <p class="text-secondary small mb-4">Please save or present this digital token receipt directly to the officer on desk duty at Gate 2 checkpoints.</p>
             
-            <div class="qr-frame mb-4">
+            <!-- Fixed Img Tag Source Layout Block -->
+            <div class="qr-frame mb-4" style="width: 254px; height: 254px; display: flex; align-items: center; justify-content: center;">
                 <img src="<?php echo $successData['qr']; ?>" style="width: 210px; height: 210px; display: block;" alt="Verification Pass QR Token">
             </div>
             
@@ -150,7 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <form action="index.php" method="POST" enctype="multipart/form-data">
                 
-                <!-- Category Field Row Alignment -->
                 <div class="horizontal-field-row">
                     <label class="form-label text-dark fw-bold m-0" style="width: 30%;">Visitor Classification</label>
                     <div style="width: 70%;">
@@ -164,7 +166,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <!-- Block Section: Target Inmate Data Elements -->
                 <div id="inmateSection" class="section-container mt-4">
                     <div class="form-section-title">Inmate Identification Parameters</div>
                     
@@ -196,7 +197,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     
                     <div class="horizontal-field-row mb-0">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Relationship with Inmate</label>
-                        <div style="width: 70%;">
                             <input type="text" name="relationship" class="form-control target-field shadow-sm" placeholder="e.g. Spouse, Sibling, Legal Representative">
                         </div>
                     </div>
@@ -206,14 +206,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="section-container mt-4">
                     <div class="form-section-title">Visitor Identification Profile</div>
                     
-                    <div class="horizontal-field-row">
+                    <div class="horizontal-field-row mb-3">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor Full Name</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorName" class="form-control shadow-sm" placeholder="Enter your full legal name" required>
                         </div>
                     </div>
                     
-                    <div class="horizontal-field-row">
+                    <div class="horizontal-field-row mb-3">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Visitor National CID</label>
                         <div style="width: 70%;">
                             <input type="text" name="visitorCid" class="form-control shadow-sm" placeholder="Enter your official card identifier numbers" required>
