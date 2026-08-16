@@ -39,11 +39,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorMessage = "❌ Registration Rejected: You cannot have more than 6 accompanying visitors per application.";
     }
 
-    // 🚀 FIXED SECURE CLOUD CHECK: Prevents false restriction blocks on empty query responses
+    // Fixed secure cloud check: Prevents false restriction blocks on empty query responses
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
         $banCheck = querySupabaseCloud("banned_inmates?inmate_cid=eq." . urlencode($inmateCid), "GET");
-        if (is_array($banCheck) && !empty($banCheck) && isset($banCheck[0]['inmate_cid'])) {
-            $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
+        if (is_array($banCheck) && !empty($banCheck)) {
+            // Check if it's an array wrapper or single matching object data packet
+            $checkObj = isset($banCheck[0]) ? $banCheck[0] : $banCheck;
+            if (isset($checkObj['inmate_cid'])) {
+                $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
+            }
         }
     }
 
@@ -70,6 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Direct Cloud Insertion Operation!
         $insertedRecord = querySupabaseCloud("visitors", "POST", $documentPayload);
+        
+        // Extract the unique row database ID key index
         $recordId = $insertedRecord['id'] ?? null;
         
         if (empty($recordId)) {
@@ -95,6 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 
 <?php include 'header.php'; ?>
 
