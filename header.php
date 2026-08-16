@@ -26,11 +26,14 @@ $userRole = $_SESSION['role'] ?? '';
             background: radial-gradient(circle at 0% 0%, #f8fafc 0%, #f1f5f9 100%);
             min-height: 100vh;
             color: #1e293b;
+            display: flex;
+            flex-direction: column;
         }
         .navbar {
             background: rgba(15, 23, 42, 0.95) !important;
             backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            width: 100%;
         }
         .navbar-brand {
             font-weight: 700;
@@ -90,6 +93,20 @@ $userRole = $_SESSION['role'] ?? '';
             box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
             color: white;
         }
+        /* 🚀 MASTER RESPONSIVE VIEWPORTS CENTERING GRID UTILITY */
+        .master-viewport-center-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 2rem 1rem;
+        }
+        .master-content-limiter {
+            width: 100%;
+            /* Automatically scales from mobile grids up to widescreen desk systems */
+            max-width: 950px; 
+        }
     </style>
 </head>
 <body>
@@ -102,7 +119,6 @@ $userRole = $_SESSION['role'] ?? '';
         
         <div class="collapse navbar-collapse" id="vrsNavbar">
             <div class="navbar-nav ms-auto gap-2 align-items-md-center mt-3 mt-md-0">
-                <!-- Gate 1 registration form link stays open to all traffic -->
                 <a class="nav-link text-white small" href="index.php">🏠 Gate 1 Entry</a>
                 
                 <?php if ($isLoggedIn): ?>
@@ -111,7 +127,6 @@ $userRole = $_SESSION['role'] ?? '';
                     <?php endif; ?>
                     <?php if ($userRole === 'admin'): ?>
                         <a class="nav-link text-white small" href="admin.php">📊 Admin Panel</a>
-                        <!-- 💡 New Restriction Dashboard Link Hook -->
                         <a class="nav-link text-warning small fw-bold" href="manage_ban.php">🚫 Inmate Restrictions</a>
                     <?php endif; ?>
                     <span class="navbar-text text-secondary mx-md-2 small d-none d-md-inline">|</span>
@@ -125,5 +140,6 @@ $userRole = $_SESSION['role'] ?? '';
     </div>
 </nav>
 
-<!-- Bootstrap JS Bundle for Responsive Toggle Animation -->
-<script src="https://jsdelivr.net"></script>
+<!-- 💡 AUTOMATED MASTER WRAPPER OPENING TAG: Centers any page layout executing next -->
+<div class="master-viewport-center-wrapper">
+    <div class="master-content-limiter">
