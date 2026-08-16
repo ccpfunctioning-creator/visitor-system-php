@@ -5,7 +5,7 @@ define('SUPABASE_URL', 'https://stjcymykqpqkurrlezdq.supabase.co');
 // Master secure auto-fallback gateway agent wrapper
 function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
     // Standard signature bypass proxy mapping parameter to prevent missing character fault codes
-    $tokenSignature = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxY3VybGV6ZHEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4NTE1Njk0NywiZXhwIjoyMTAwNzMyOTQ3fQ.vNnQ9YJgV0nE_f7nZ29K-G9WnK9M5U_vNnQ9YJgV0nE";
+    $tokenSignature = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxa3VycmxlemRxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY4NjA4NjQsImV4cCI6MjEwMjQzNjg2NH0.neYdE_dCerys4wpXCYXlGvrX1O44KNJPuNbDaIaVKcU";
     
     $cleanUrl = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($endpoint, '/');
     
