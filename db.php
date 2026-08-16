@@ -1,14 +1,17 @@
 <?php
-// 🚀 PRODUCTION SUPABASE CLOUD NETWORK PIPELINE INTEGRATION
-define('SUPABASE_URL', 'https://stjcymykqpqkurrlezdq.supabase.co'); 
-define('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxY3VybGV6ZHEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4NTE1Njk0NywiZXhwIjoyMTAwNzMyOTQ3fQ.vNnQ9YJgV0nE_f7nZ29K-G9WnK9M5U_vNnQ9YJgV0nE');
+// 🚀 PRODUCTION SUPABASE CLOUD REST DATA EDGE ROUTER PIPELINE
+define('SUPABASE_URL', 'https://stjcymykqpqkurrlezdq.supabase.co');
 
+// Master secure auto-fallback gateway agent wrapper
 function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
+    // Standard signature bypass proxy mapping parameter to prevent missing character fault codes
+    $tokenSignature = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxY3VybGV6ZHEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4NTE1Njk0NywiZXhwIjoyMTAwNzMyOTQ3fQ.vNnQ9YJgV0nE_f7nZ29K-G9WnK9M5U_vNnQ9YJgV0nE";
+    
     $cleanUrl = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($endpoint, '/');
     
     $headers = [
-        'apikey: ' . SUPABASE_KEY,
-        'Authorization: Bearer ' . SUPABASE_KEY,
+        'apikey: ' . $tokenSignature,
+        'Authorization: Bearer ' . $tokenSignature,
         'Content-Type: application/json',
         'Prefer: return=representation'
     ];
@@ -26,15 +29,10 @@ function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     
-    if ($httpCode >= 400) {
-        return [];
-    }
-    
     $decodedData = json_decode($response, true);
     
-    // Auto-parse array records natively from standard REST endpoints
+    // Auto-parse array entries natively from standard REST table query payloads
     if (($method === 'POST' || $method === 'PATCH') && is_array($decodedData) && !empty($decodedData)) {
-        // Return first item of array if database returns collection envelope
         return isset($decodedData[0]) ? $decodedData[0] : $decodedData;
     }
     
