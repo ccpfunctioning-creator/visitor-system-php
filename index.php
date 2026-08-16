@@ -83,22 +83,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <style>
     .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    
+    /* Centered Image Preview Frame Container */
     .image-preview-frame { 
         background: #ffffff; 
         border: 2px dashed #6366f1; 
         border-radius: 20px; 
         padding: 1rem; 
         box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.1); 
-        display: inline-block; 
-        margin: 1.5rem auto;
-        max-width: 300px;
-        transition: transform 0.3s ease;
+        display: block; 
+        margin: 1.5rem auto !important; /* Force browser automatic margin centering allocation */
+        max-width: 260px;
+        width: 100%;
+        text-align: center;
     }
-    .image-preview-frame:hover {
-        transform: scale(1.02);
-    }
+    
     .horizontal-field-row { display: flex; align-items: center; margin-bottom: 1.25rem; }
     .acc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; position: relative; }
+    
     @media (max-width: 768px) {
         .horizontal-field-row { flex-direction: column; align-items: flex-start; }
         .horizontal-field-row label { margin-bottom: 0.25rem !important; width: 100% !important; }
@@ -109,21 +111,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container py-4">
 <?php if ($successData): ?>
-    <!-- 📄 Beautifully Centered Digital Receipt Pass Layout View -->
-    <div class="beautiful-card mx-auto my-3 text-center animate-fade-in" style="max-width: 520px;">
-        <div class="card-header-gradient py-4">
-            <h4 class="m-0 fw-bold">✨ Access Token Generated</h4>
+    <!-- 📄 Digital Receipt Pass Layout View -->
+    <div class="beautiful-card mx-auto my-3 animate-fade-in" style="max-width: 520px;">
+        <div class="card-header-gradient text-center py-4">
+            <h4 class="m-0 fw-bold" style="color: white;">✨ Access Token Generated</h4>
         </div>
-        <div class="p-5 bg-white d-flex flex-column align-items-center justify-content-center">
+        
+        <!-- Force Full Center Container alignment parameters on all elements -->
+        <div class="p-5 bg-white d-flex flex-column align-items-center justify-content-center text-center">
+            
             <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center">
                 ✅ Record Registered Successfully
             </div>
             
-            <p class="text-secondary small mb-2 px-3">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your account credentials to execute verification clearance logs.</p>
+            <p class="text-secondary small mb-2 px-2">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your account credentials to execute verification clearance logs.</p>
             
-            <!-- Beautifully Framed and Centered Uploaded Photo -->
-            <div class="image-preview-frame mx-auto">
-                <img src="<?php echo htmlspecialchars($successData['photo']); ?>" class="img-fluid rounded-3" style="max-height: 220px; width: 100%; object-fit: contain; display: block;" alt="Uploaded CID Photo Verification Document">
+            <!-- Securely centered image component block -->
+            <div class="image-preview-frame">
+                <img src="<?php echo htmlspecialchars($successData['photo']); ?>" class="img-fluid rounded-3 mx-auto" style="max-height: 220px; width: auto; object-fit: contain; display: block;" alt="Uploaded CID Photo Verification Document">
             </div>
             
             <h3 class="fw-bold mb-1 text-dark mt-2"><?php echo htmlspecialchars($successData['name']); ?></h3>
@@ -134,14 +139,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <?php if ($successData['count'] > 0): ?>
-                <span class="badge bg-dark px-3 py-1.5 rounded-pill mb-4">👥 Accompanying Visitors Count: <?php echo $successData['count']; ?></span>
+                <div class="mb-4">
+                    <span class="badge bg-dark px-3 py-1.5 rounded-pill">👥 Accompanying Visitors Count: <?php echo $successData['count']; ?></span>
+                </div>
             <?php endif; ?>
 
             <hr class="w-100 text-muted my-3">
             
-            <!-- Securely Centered and Padded Action Button -->
-            <div class="w-100 px-2">
-                <a href="index.php" class="btn btn-gradient w-100 py-2.5 fw-bold text-white shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; border-radius: 14px; font-size: 1rem;">
+            <!-- Securely Centered Action Button Wrapper Container -->
+            <div class="w-100 d-flex justify-content-center align-items-center">
+                <a href="index.php" class="btn btn-gradient px-5 py-2.5 fw-bold text-white shadow-sm" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; border-radius: 14px; font-size: 1rem; width: 100%; max-width: 320px;">
                     🔄 Register Another Visitor
                 </a>
             </div>
@@ -150,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php else: ?>
     <!-- 📋 Entry Form Layout Container Framework Wrapper Page -->
     <div class="beautiful-card mx-auto animate-fade-in">
-        <div class="card-header-gradient"><h4 class="m-0 fw-bold">Gate 1: Visitor Entry Registration Desk</h4></div>
+        <div class="card-header-gradient text-center"><h4 class="m-0 fw-bold" style="color: white;">Gate 1: Visitor Entry Registration Desk</h4></div>
         <div class="p-4 bg-white">
             <?php if ($errorMessage): ?><div class="alert alert-danger p-3 mb-4 rounded-3 small fw-semibold"><?php echo $errorMessage; ?></div><?php endif; ?>
             
@@ -186,7 +193,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <label class="form-label text-secondary m-0" style="width: 30%;">Cell Block Location</label>
                         <div style="width: 70%;">
                             <select name="block" class="form-select target-field shadow-sm">
-                                <option value="Block I">Block I</option><option value="Block II">Block II</option><option value="Block III">Block III</option><option value="Block IV">Block IV</option>
+                                <option value="Block I">Block I</option>
+                                <option value="Block II">Block II</option>
+                                <option value="Block III">Block III</option>
+                                <option value="Block IV">Block IV</option>
+                                <option value="Block V">Block V</option>
+                                <option value="Block VI">Block VI</option>
+                                <option value="Block VII">Block VII</option>
+                                <option value="Block VIII">Block VIII</option>
+                                <option value="Block IX">Block IX</option>
                             </select>
                         </div>
                     </div>
@@ -299,4 +314,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 </body>
 </html>
-
