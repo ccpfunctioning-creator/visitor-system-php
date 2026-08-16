@@ -23,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $accCids = $_POST['accCid'] ?? [];
     $accRelations = $_POST['accRelation'] ?? [];
     
-    // Clean out empty inputs to get true count
     $accompanyingList = [];
     for ($i = 0; $i < count($accNames); $i++) {
         if (!empty(trim($accNames[$i]))) {
@@ -35,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // 🛑 CRITICAL COMPLIANCE FILTER: Reject registration if entries exceed 6 rows
+    // Safety check filter: Reject registration if entries exceed 6 rows
     if (count($accompanyingList) > 6) {
         $errorMessage = "❌ Registration Rejected: You cannot have more than 6 accompanying visitors per application.";
     }
@@ -63,28 +62,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errorMessage) {
-        // Flatten array object to dynamic JSON string parameters to save inside SQLite column cleanly
         $flatAccompanyingText = !empty($accompanyingList) ? json_encode($accompanyingList) : null;
 
         $stmt = $db->prepare("INSERT INTO visitors (inmateName, inmateCid, block, visitorName, visitorCid, relationship, visitorType, cidPhoto, accompanyingData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$inmateName, $inmateCid, $block, $visitorName, $visitorCid, $relationship, $visitorType, $photoPath, $flatAccompanyingText]);
         
-        $lastId = $db->lastInsertId();
-        
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-        $host = $_SERVER['HTTP_HOST'];
-        
-        if (strpos($host, 'render.local') !== false || $host === 'localhost' || $host === '127.0.0.1') {
-            $host = '://onrender.com'; 
-        }
-        
-        $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $lastId;
-        
         $successData = [
             'name' => $visitorName, 
             'cid' => $visitorCid, 
             'type' => $visitorType,
-            'url' => $verificationUrl
+            'photo' => $photoPath,
+            'count' => count($accompanyingList)
         ];
     }
 }
@@ -92,11 +80,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <?php include 'header.php'; ?>
 
-<script src="https://cloudflare.com"></script>
-
 <style>
     .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    .qr-frame { background: #ffffff; border: 2px dashed #cbd5e1; border-radius: 20px; padding: 1.5rem; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); display: inline-block; margin: 1.5rem auto; }
+    .image-preview-frame { 
+        background: #ffffff; 
+        border: 2px dashed #cbd5e1; 
+        border-radius: 20px; 
+        padding: 1rem; 
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05); 
+        display: inline-block; 
+        margin: 1.5rem auto;
+        max-width: 280px;
+    }
     .horizontal-field-row { display: flex; align-items: center; margin-bottom: 1.25rem; }
     .acc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1rem; margin-bottom: 0.75rem; position: relative; }
     @media (max-width: 768px) {
@@ -109,33 +104,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container py-4">
 <?php if ($successData): ?>
+    <!-- 📄 Digital Receipt Layout View (Directly displaying uploaded digital card photo) -->
     <div class="beautiful-card mx-auto my-3 text-center animate-fade-in" style="max-width: 500px;">
         <div class="card-header-gradient py-4">
-            <h4 class="m-0 fw-bold">✨ Access Pass Token Issued</h4>
+            <h4 class="m-0 fw-bold">✨ Registration Receipt Generated</h4>
         </div>
         <div class="p-5 bg-white d-flex flex-column align-items-center">
             <div class="alert alert-success w-100 rounded-3 mb-4 fw-semibold justify-content-center">✅ Record Registered Successfully</div>
-            <p class="text-secondary small mb-2">Please present this secure verification QR code below to the security officer on desk duty at Gate 2 checkpoints.</p>
             
-            <div class="qr-frame"><canvas id="qrCanvasCode"></canvas></div>
+            <p class="text-secondary small mb-2">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your account credentials to execute verification clearance logs.</p>
+            
+            <!-- Render the actual uploaded photo directly onto the interface card pass receipt -->
+            <div class="image-preview-frame">
+                <img src="<?php echo htmlspecialchars($successData['photo']); ?>" class="img-fluid rounded-3" style="max-height: 200px; width: 100%; object-fit: contain;" alt="Uploaded CID Photo Verification Document">
+            </div>
             
             <h4 class="fw-bold mb-1 text-dark"><?php echo htmlspecialchars($successData['name']); ?></h4>
-            <div class="d-flex gap-2 justify-content-center align-items-center mb-4">
+            
+            <div class="d-flex gap-2 justify-content-center align-items-center mb-2">
                 <span class="badge bg-light text-secondary border px-2 py-1.5 small font-monospace">CID: <?php echo htmlspecialchars($successData['cid']); ?></span>
                 <span class="badge bg-primary px-2 py-1.5 text-white small"><?php echo $successData['type']; ?> Visit</span>
             </div>
+            
+            <?php if ($successData['count'] > 0): ?>
+                <span class="badge bg-dark px-3 py-1.5 rounded-pill mb-3">👥 Accompanying Visitors Count: <?php echo $successData['count']; ?></span>
+            <?php endif; ?>
+
             <hr class="w-100 text-muted my-3">
             <a href="index.php" class="btn btn-gradient w-100 py-2.5 mt-1 fw-bold text-white shadow-sm" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">Register Another Visitor</a>
         </div>
     </div>
-    <script>
-        var qr = new QRious({
-            element: document.getElementById('qrCanvasCode'),
-            value: "<?php echo $successData['url']; ?>",
-            size: 220, background: '#ffffff', foreground: '#1e1b4b', level: 'H'
-        });
-    </script>
 <?php else: ?>
+    <!-- 📋 Entry Form Layout Container Framework Wrapper Page -->
     <div class="beautiful-card mx-auto animate-fade-in">
         <div class="card-header-gradient"><h4 class="m-0 fw-bold">Gate 1: Visitor Entry Registration Desk</h4></div>
         <div class="p-4 bg-white">
@@ -147,8 +147,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <label class="form-label text-dark fw-bold m-0" style="width: 30%;">Visitor Classification</label>
                     <div style="width: 70%;">
                         <select name="visitorType" id="visitorType" class="form-select shadow-sm" required>
-                            <option value="Personal">Personal Visit</option><option value="Official">Official Business</option>
-                            <option value="Conjugal">Conjugal Visit</option><option value="Night Visitor">Night Visitor</option>
+                            <option value="Personal">Personal Visit</option>
+                            <option value="Official">Official Business</option>
+                            <option value="Conjugal">Conjugal Visit</option>
+                            <option value="Night Visitor">Night Visitor</option>
                             <option value="Others">Others (Hides Inmate)</option>
                         </select>
                     </div>
@@ -181,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </div>
 
-                <!-- 💡 NEW DYNAMIC COMPONENT: Accompanying Passenger Roster Factory -->
+                <!-- Accompanying Passenger Roster Section -->
                 <div class="section-container mt-4">
                     <div class="form-section-title d-flex justify-content-between align-items-center">
                         <span>Accompanying Visitors Roster</span>
@@ -190,27 +192,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="text-muted small mb-3">Maximum limit: <strong>6 accompanying passengers</strong>. Entries exceeding 6 will be blocked.</div>
                     
                     <div id="accompanyingWrapper">
-                        <!-- Dynamic rows will be injected here by JavaScript -->
+                        <!-- Dynamic rows injected here by JavaScript -->
                     </div>
                 </div>
 
+                <!-- Primary Visitor Section -->
                 <div class="section-container mt-4">
                     <div class="form-section-title">Primary Visitor Identity Profile</div>
-                    <div class="horizontal-field-row">
+                    
+                    <div class="horizontal-field-row mb-3">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Primary Full Name</label>
-                        <div style="width: 70%;"><input type="text" name="visitorName" class="form-control shadow-sm" placeholder="Enter your full legal name" required></div>
+                        <div style="width: 70%;">
+                            <input type="text" name="visitorName" class="form-control shadow-sm" placeholder="Enter your full legal name" required>
+                        </div>
                     </div>
-                    <div class="horizontal-field-row">
+                    
+                    <div class="horizontal-field-row mb-3">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Primary National CID</label>
-                        <div style="width: 70%;"><input type="text" name="visitorCid" class="form-control shadow-sm" placeholder="Enter your official card identifier numbers" required></div>
+                        <div style="width: 70%;">
+                            <input type="text" name="visitorCid" class="form-control shadow-sm" placeholder="Enter your official card identifier numbers" required>
+                        </div>
                     </div>
+                    
                     <div class="horizontal-field-row mb-0">
                         <label class="form-label text-secondary m-0" style="width: 30%;">Upload Primary CID Image</label>
-                        <div style="width: 70%;"><input type="file" name="cidPhoto" class="form-control shadow-sm" accept="image/*" required></div>
+                        <div style="width: 70%;">
+                            <input type="file" name="cidPhoto" class="form-control shadow-sm" accept="image/*" required>
+                        </div>
                     </div>
                 </div>
 
-                <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-3 mt-3 fw-bold text-white shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; font-size: 1.05rem; border-radius: 14px;">Verify Credentials &amp; Issue Pass</button>
+                <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-3 mt-3 fw-bold text-white shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; font-size: 1.05rem; border-radius: 14px;">
+                    Verify Credentials &amp; Issue Pass
+                </button>
             </form>
         </div>
     </div>
@@ -225,7 +239,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const addAccBtn = document.getElementById('addAccBtn');
         const accompanyingWrapper = document.getElementById('accompanyingWrapper');
 
-        // Accompanying Visitor Dynamic Matrix Row Adder
+        // Dynamic Rows Controller Framework logic
         addAccBtn.addEventListener('click', function() {
             const currentRows = accompanyingWrapper.querySelectorAll('.acc-box').length;
             if (currentRows >= 6) {
@@ -255,12 +269,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         typeSelect.addEventListener('change', function() {
             if(this.value === 'Others') {
                 inmateSection.style.display = 'none';
-                inmateSection.querySelectorAll('input, select').forEach(el => { el.removeAttribute('required'); el.value = ''; });
+                inmateSection.querySelectorAll('input, select').forEach(el => { 
+                    el.removeAttribute('required'); 
+                    el.value = ''; 
+                });
                 submitBtn.disabled = false;
                 banStatus.classList.add('d-none');
             } else {
                 inmateSection.style.display = 'block';
-                inmateSection.querySelectorAll('.target-field, #inmateCid').forEach(el => el.setAttribute('required', 'true'));
+                inmateSection.querySelectorAll('.target-field, #inmateCid').forEach(el => {
+                    el.setAttribute('required', 'true');
+                });
             }
         });
 
@@ -277,7 +296,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     banStatus.classList.add('d-none');
                     submitBtn.disabled = false;
                 }
-            } catch(e) { console.error(e); }
+            } catch(e) { 
+                console.error(e); 
+            }
         });
     </script>
 <?php endif; ?>
