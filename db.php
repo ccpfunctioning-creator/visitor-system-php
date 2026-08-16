@@ -42,24 +42,27 @@ function backupDatabaseToGitHub() {
     $filePath = 'database.sqlite';
     $localFile = __DIR__ . '/' . $filePath;
 
-    if (!file_exists($localFile)) return;
+    // Fallback: If database file doesn't exist yet, force touch it
+    if (!file_exists($localFile)) {
+        file_put_contents($localFile, '');
+    }
 
     $apiUrl = "https://github.com{$username}/{$repo}/contents/{$filePath}";
     $fileContent = base64_encode(file_get_contents($localFile));
 
-    // Step A: Look up if a file history tag exists on GitHub to prevent conflict blocks
-    $ch = curl_init($apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: token {$token}",
-        "User-Agent: PHP-VRS-Database-Agent"
-    ]);
-    $response = curl_exec($ch);
-    $info = curl_getinfo($ch);
-    curl_close($ch);
+    // Step A: Look up file history tag on GitHub with forced stream headers
+    $opts = [
+        "http" => [
+            "method" => "GET",
+            "header" => "Authorization: token {$token}\r\n" .
+                        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
+        ]
+    ];
+    $context = stream_context_create($opts);
+    $response = @file_get_contents($apiUrl, false, $context);
 
     $sha = null;
-    if ($info['http_code'] == 200) {
+    if ($response !== false) {
         $result = json_decode($response, true);
         $sha = $result['sha'];
     }
@@ -72,16 +75,16 @@ function backupDatabaseToGitHub() {
     ];
     if ($sha) { $payload["sha"] = $sha; }
 
-    $ch = curl_init($apiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: token {$token}",
-        "Content-Type: application/json",
-        "User-Agent: PHP-VRS-Database-Agent"
-    ]);
-    curl_exec($ch);
-    curl_close($ch);
+    $putOpts = [
+        "http" => [
+            "method" => "PUT",
+            "header" => "Authorization: token {$token}\r\n" .
+                        "Content-Type: application/json\r\n" .
+                        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n",
+            "content" => json_encode($payload)
+        ]
+    ];
+    $putContext = stream_context_create($putOpts);
+    @file_get_contents($apiUrl, false, $putContext);
 }
 ?>
