@@ -1,7 +1,7 @@
 <?php
 // 🚀 SUPABASE CLOUD DATA NETWORK PIPELINE
-define('SUPABASE_URL', 'https://supabase.co');
-define('SUPABASE_KEY', 'sb_publishable_3pv8ZKvVnibn91bhWQ0cMt1kM5U');
+define('SUPABASE_URL', 'https://stjcymykqpqkurrlezdq.supabase.co');
+define('SUPABASE_KEY', 'sb_publishable_3pv8ZKvVnibn91bhWQ0cMA_Aw5xjf51');
 
 function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
     // Standard routing parser to avoid endpoint double mapping errors
