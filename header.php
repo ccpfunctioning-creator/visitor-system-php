@@ -93,7 +93,7 @@ $userRole = $_SESSION['role'] ?? '';
             box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
             color: white;
         }
-        /* 🚀 MASTER RESPONSIVE VIEWPORTS CENTERING GRID UTILITY */
+        /* 🚀 UNIFORM DESKTOP GRID CENTERING WRAPPER */
         .master-viewport-center-wrapper {
             flex-grow: 1;
             display: flex;
@@ -104,8 +104,8 @@ $userRole = $_SESSION['role'] ?? '';
         }
         .master-content-limiter {
             width: 100%;
-            /* Automatically scales from mobile grids up to widescreen desk systems */
-            max-width: 950px; 
+            /* ⚡ REDUCED FROM 950px TO STANDARD CARD COMPACT WIDTH */
+            max-width: 640px; 
         }
     </style>
 </head>
@@ -140,6 +140,5 @@ $userRole = $_SESSION['role'] ?? '';
     </div>
 </nav>
 
-<!-- 💡 AUTOMATED MASTER WRAPPER OPENING TAG: Centers any page layout executing next -->
 <div class="master-viewport-center-wrapper">
     <div class="master-content-limiter">
