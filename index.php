@@ -40,13 +40,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorMessage = "❌ Registration Rejected: You cannot have more than 6 accompanying visitors per application.";
     }
 
-    // Check ban list in Supabase Cloud
+        // 🚀 FIXED BAN CHECK FILTER VALIDATION LAYER
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
         $banCheck = querySupabaseCloud("banned_inmates?inmate_cid=eq." . urlencode($inmateCid), "GET");
-        if (!empty($banCheck) && is_array($banCheck)) {
+        
+        // Only trigger an active block if an actual record match array is found inside your cloud table rows
+        if (is_array($banCheck) && count($banCheck) > 0 && isset($banCheck[0]['inmate_cid'])) {
             $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
         }
     }
+
 
     // Process file upload safely using image base64 inline encoding block parameters
     $photoEncodedString = '';
