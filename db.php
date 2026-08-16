@@ -1,9 +1,9 @@
 <?php
-// Standalone Local Database Configuration Management Framework
+// 🚀 POINT DATABASE BACK TO THE SAME MAIN DIRECTORY WHERE YOUR GITHUB FILE LIVES
 $dbFile = __DIR__ . '/database.sqlite';
 
 try {
-    // Open a persistent local database file stream container
+    // Open the file inside the project root folder cleanly
     $db = new PDO("sqlite:" . $dbFile);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -34,17 +34,16 @@ try {
     die("Local registry initialization crash: " . $e->getMessage());
 }
 
-// 🚀 SECURE GITHUB REMOTE STORAGE AUTOMATION AGENT BACKUP PIPELINE
+// 🚀 REMOTE STORAGE AUTOMATION AGENT BACKUP PIPELINE
 function backupDatabaseToGitHub() {
     $username = 'ccpfunctioning-creator'; 
     $repo = 'visitor-system-php';
     $token = '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';
     $filePath = 'database.sqlite';
-    $localFile = __DIR__ . '/' . $filePath;
+    $localFile = __DIR__ . '/database.sqlite'; // Read from the project root folder
 
-    // Fallback: If database file doesn't exist yet, force touch it
-    if (!file_exists($localFile)) {
-        file_put_contents($localFile, '');
+    if (!file_exists($localFile) || filesize($localFile) === 0) {
+        return;
     }
 
     $apiUrl = "https://github.com{$username}/{$repo}/contents/{$filePath}";
