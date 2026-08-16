@@ -1,13 +1,21 @@
 <?php
-// 🚀 POINT DATABASE BACK TO THE SAME MAIN DIRECTORY WHERE YOUR GITHUB FILE LIVES
-$dbFile = __DIR__ . '/database.sqlite';
+// 🚀 UNLOCKED DIRECTORY ENGINE ROUTING PIPELINE
+// Shift your data location out of the restricted root directory into the unlocked system folder
+$dbFile = '/tmp/database.sqlite';
+$repoFile = __DIR__ . '/database.sqlite';
+
+// If a fresh container build or reset happens, copy the GitHub baseline copy into /tmp instantly
+if (!file_exists($dbFile) && file_exists($repoFile)) {
+    copy($repoFile, $dbFile);
+    chmod($dbFile, 0777); // Grant completely unblocked write permissions
+}
 
 try {
-    // Open the file inside the project root folder cleanly
+    // Open the unblocked temporary database file container with maximum permissions
     $db = new PDO("sqlite:" . $dbFile);
     $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // Build standard data log tracking structures
+    // Build standard data log tracking structures if not initialized
     $db->exec("CREATE TABLE IF NOT EXISTS visitors (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         inmateName TEXT,
@@ -31,16 +39,16 @@ try {
     )");
 
 } catch (PDOException $e) {
-    die("Local registry initialization crash: " . $e->getMessage());
+    die("Local cloud registry initialization crash: " . $e->getMessage());
 }
 
-// 🚀 REMOTE STORAGE AUTOMATION AGENT BACKUP PIPELINE
+// 🚀 SECURE GITHUB REMOTE STORAGE AUTOMATION AGENT BACKUP PIPELINE
 function backupDatabaseToGitHub() {
     $username = 'ccpfunctioning-creator'; 
     $repo = 'visitor-system-php';
     $token = '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';
     $filePath = 'database.sqlite';
-    $localFile = __DIR__ . '/database.sqlite'; // Read from the project root folder
+    $localFile = '/tmp/database.sqlite'; // Read from the open unblocked directory
 
     if (!file_exists($localFile) || filesize($localFile) === 0) {
         return;
@@ -49,7 +57,7 @@ function backupDatabaseToGitHub() {
     $apiUrl = "https://github.com{$username}/{$repo}/contents/{$filePath}";
     $fileContent = base64_encode(file_get_contents($localFile));
 
-    // Step A: Look up file history tag on GitHub with forced stream headers
+    // Step A: Look up file history tag on GitHub with forced headers
     $opts = [
         "http" => [
             "method" => "GET",
