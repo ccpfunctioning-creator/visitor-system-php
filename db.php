@@ -4,7 +4,7 @@ define('SUPABASE_URL', 'https://supabase.co');
 
 function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
     // ⚡ EXACT UNCLIPPED MASTER SERVICE TOKEN MATCHING YOUR PROJECT
-    $tokenSignature = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxY3VybGV6ZHEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4NTE1Njk0NywiZXhwIjoyMTAwNzMyOTQ3fQ.vNnQ9YJgV0nE_f7nZ29K-G9WnK9M5U_vNnQ9YJgV0nE";
+    $tokenSignature = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxY3VybGV6ZHEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTt4NTE1Njk0NywiZXhwIjoyMTAwNzMyOTQ3fQ.vNnQ9YJgV0nE_f7nZ29K-G9WnK9M5U_vNnQ9YJgV0nE";
     
     $cleanUrl = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($endpoint, '/');
     
@@ -12,7 +12,7 @@ function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
         'apikey: ' . $tokenSignature,
         'Authorization: Bearer ' . $tokenSignature,
         'Content-Type: application/json',
-        'Prefer: return=representation'
+        'Prefer: return=representation' // 💡 Demands created object data back from cloud table layers
     ];
 
     $ch = curl_init($cleanUrl);
@@ -34,9 +34,11 @@ function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
     
     $decodedData = json_decode($response, true);
     
-    // Auto-extract first item from array wrappers natively during POST operations
-    if ($method === 'POST' && is_array($decodedData) && isset($decodedData[0])) {
-        return $decodedData[0];
+    // 🚀 UNWRAP SUPABASE COLLECTION ARRAYS IMMEDIATELY
+    if (($method === 'POST' || $method === 'PATCH') && is_array($decodedData) && !empty($decodedData)) {
+        if (isset($decodedData[0])) {
+            return $decodedData[0]; // Extract the flat record object out of the initial index envelope [{...}]
+        }
     }
     
     return $decodedData;
