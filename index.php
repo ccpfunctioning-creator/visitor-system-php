@@ -109,17 +109,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         position: relative; 
     }
 
-    /* Beautiful Desktop Label Center/Right Alignment */
-    @media (min-width: 768px) {
-        .control-label-align {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            text-align: left;
-            font-weight: 600;
-            color: #475569;
-            height: 100%;
-        }
+    .form-card-container {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+        border: 1px solid #f1f5f9;
+        padding: 2rem;
+    }
+
+    .custom-label-style {
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.9rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .custom-input-style {
+        border-radius: 10px !important;
+        padding: 0.6rem 1rem;
+        border: 1px solid #cbd5e1;
+        transition: all 0.2s ease;
+    }
+
+    .custom-input-style:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    .section-divider-title {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #64748b;
+        font-weight: 700;
+        margin: 2rem 0 1.25rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-divider-title::after {
+        content: '';
+        flex-grow: 1;
+        height: 1px;
+        background: #e2e8f0;
     }
     
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -167,128 +200,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 <?php else: ?>
-    <!-- 📋 Fully Mobile-Responsive Entry Form Layout Container -->
-    <div class="beautiful-card mx-auto animate-fade-in shadow-lg">
-        <div class="card-header-gradient text-center">
-            <h4 class="m-0 fw-bold" style="color: white; padding: 1.5rem 0;">Gate 1: Visitor Entry Registration Desk</h4>
-        </div>
-        <div class="p-3 p-md-5 bg-white">
-            <?php if ($errorMessage): ?><div class="alert alert-danger p-3 mb-4 rounded-3 small fw-semibold"><?php echo $errorMessage; ?></div><?php endif; ?>
+    <!-- 📋 Fully Responsive Grid Form Container -->
+    <div class="form-card-container mx-auto animate-fade-in" style="max-width: 850px;">
+        <form action="index.php" method="POST" enctype="multipart/form-data">
             
-            <form action="index.php" method="POST" enctype="multipart/form-data">
+            <!-- Classification Row -->
+            <div class="row mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label custom-label-style">Visitor Classification</label>
+                    <select name="visitorType" id="visitorType" class="form-select custom-input-style" required>
+                        <option value="Personal">👪 Personal Visit</option>
+                        <option value="Official">💼 Official Business</option>
+                        <option value="Conjugal">💍 Conjugal Visit</option>
+                        <option value="Night Visitor">🌙 Night Visitor</option>
+                        <option value="Others">⚙️ Others (Hides Inmate Fields)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Section Header: Inmate Parameters -->
+            <div id="inmateSection">
+                <div class="section-divider-title">Inmate Identification Parameters</div>
                 
-                <!-- Classification Category Row -->
-                <div class="row mb-4 align-items-center">
-                    <div class="col-12 col-md-4">
-                        <label class="form-label control-label-align m-md-0">Visitor Classification</label>
+                <!-- Dual-Column Balanced Grid Row Box -->
+                <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+                    <div>
+                        <label class="form-label custom-label-style">Inmate National CID</label>
+                        <input type="text" name="inmateCid" id="inmateCid" class="form-control custom-input-style" placeholder="Enter Inmate CID Number">
+                        <div id="banStatus" class="alert alert-danger p-2 mt-2 json-alert small fw-bold d-none"></div>
                     </div>
-                    <div class="col-12 col-md-8">
-                        <select name="visitorType" id="visitorType" class="form-select shadow-sm py-2.5" required>
-                            <option value="Personal">👪 Personal Visit</option>
-                            <option value="Official">💼 Official Business</option>
-                            <option value="Conjugal">💍 Conjugal Visit</option>
-                            <option value="Night Visitor">🌙 Night Visitor</option>
-                            <option value="Others">⚙️ Others (Hides Inmate Fields)</option>
+                    <div>
+                        <label class="form-label custom-label-style">Cell Block Location</label>
+                        <select name="block" class="form-select custom-input-style">
+                            <option value="Block I">Block I</option><option value="Block II">Block II</option><option value="Block III">Block III</option>
+                            <option value="Block IV">Block IV</option><option value="Block V">Block V</option><option value="Block VI">Block VI</option>
+                            <option value="Block VII">Block VII</option><option value="Block VIII">Block VIII</option><option value="Block IX">Block IX</option>
                         </select>
                     </div>
-                </div>
-
-                <!-- Section: Target Inmate Details -->
-                <div id="inmateSection" class="section-container mt-4">
-                    <div class="form-section-title">Inmate Identification Parameters</div>
-                    
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label control-label-align m-md-0">Inmate National CID</label>
-                        </div>
-                        <div class="col-12 col-md-8">
-                            <input type="text" name="inmateCid" id="inmateCid" class="form-control shadow-sm py-2.5" placeholder="Enter Inmate CID Number">
-                            <div id="banStatus" class="alert alert-danger p-2 mt-2 json-alert small fw-bold d-none"></div>
-                        </div>
+                    <div>
+                        <label class="form-label custom-label-style">Inmate Full Name</label>
+                        <input type="text" name="inmateName" class="form-control target-field custom-input-style" placeholder="Enter Inmate Legal Full Name">
                     </div>
-                    
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label control-label-align m-md-0">Inmate Full Name</label>
-                        </div>
-                        <div class="col-12 col-md-8">
-                            <input type="text" name="inmateName" class="form-control target-field shadow-sm py-2.5" placeholder="Enter Inmate Legal Full Name">
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label control-label-align m-md-0">Cell Block Location</label>
-                        </div>
-                        <div class="col-12 col-md-8">
-                            <select name="block" class="form-select target-field shadow-sm py-2.5">
-                                <option value="Block I">Block I</option><option value="Block II">Block II</option><option value="Block III">Block III</option>
-                                <option value="Block IV">Block IV</option><option value="Block V">Block V</option><option value="Block VI">Block VI</option>
-                                <option value="Block VII">Block VII</option><option value="Block VIII">Block VIII</option><option value="Block IX">Block IX</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-0 align-items-center">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label control-label-align m-md-0">Relationship with Inmate</label>
-                        </div>
-                        <div class="col-12 col-md-8">
-                            <input type="text" name="relationship" class="form-control target-field shadow-sm py-2.5" placeholder="e.g. Spouse, Sibling, Parent">
-                        </div>
+                    <div>
+                        <label class="form-label custom-label-style">Relationship with Inmate</label>
+                        <input type="text" name="relationship" class="form-control target-field custom-input-style" placeholder="e.g., Spouse, Sibling, Parent">
                     </div>
                 </div>
+            </div>
 
-                <!-- Section: Accompanying Passenger Roster Factory -->
-                <div class="section-container mt-4">
-                    <div class="form-section-title d-flex justify-content-between align-items-center flex-wrap gap-2">
-                        <span>Accompanying Visitors Roster</span>
-                        <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
-                    </div>
-                    <div class="text-muted small mb-3">Maximum limit: <strong>6 accompanying passengers</strong>. Entries exceeding 6 will be blocked.</div>
-                    
-                    <div id="accompanyingWrapper">
-                        <!-- Dynamic rows injected here by JavaScript -->
-                    </div>
+            <!-- Accompanying Visitors Section -->
+            <div class="section-divider-title d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span>Accompanying Visitors Roster</span>
+                <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
+            </div>
+            <div class="text-muted small mb-3">Maximum limit: <strong>6 accompanying passengers</strong>. Entries exceeding 6 will be blocked.</div>
+            
+            <div id="accompanyingWrapper">
+                <!-- Dynamic rows injected here by JavaScript -->
+            </div>
+
+            <!-- Primary Visitor Profile Section -->
+            <div class="section-divider-title">Primary Visitor Identity Profile</div>
+            <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
+                <div>
+                    <label class="form-label custom-label-style">Primary Full Name</label>
+                    <input type="text" name="visitorName" class="form-control custom-input-style" placeholder="Enter your full legal name" required>
                 </div>
-
-                <!-- Section: Primary Visitor Profile -->
-                <div class="section-container mt-4">
-                    <div class="form-section-title">Primary Visitor Identity Profile</div>
-                    
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label control-label-align m-md-0">Primary Full Name</label>
-                        </div>
-                        <div class="col-12 col-md-8">
-                            <input type="text" name="visitorName" class="form-control shadow-sm py-2.5" placeholder="Enter your full legal name" required>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label control-label-align m-md-0">Primary National CID</label>
-                        </div>
-                        <div class="col-12 col-md-8">
-                            <input type="text" name="visitorCid" class="form-control shadow-sm py-2.5" placeholder="Enter your card number" required>
-                        </div>
-                    </div>
-                    
-                    <div class="row mb-0 align-items-center">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label control-label-align m-md-0">Upload Primary CID Image</label>
-                        </div>
-                        <div class="col-12 col-md-8">
-                            <input type="file" name="cidPhoto" class="form-control shadow-sm" accept="image/*" required>
-                        </div>
-                    </div>
+                <div>
+                    <label class="form-label custom-label-style">Primary National CID</label>
+                    <input type="text" name="visitorCid" class="form-control custom-input-style" placeholder="Enter your card number" required>
                 </div>
+                <div class="col-md-12">
+                    <label class="form-label custom-label-style">Upload Primary CID Image</label>
+                    <input type="file" name="cidPhoto" class="form-control custom-input-style" accept="image/*" required>
+                </div>
+            </div>
 
-                <button type="submit" id="submitBtn" class="btn btn-gradient w-100 py-3 mt-4 fw-bold text-white shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; font-size: 1.05rem; border-radius: 12px; height: 50px;">
-                    Verify Credentials &amp; Issue Pass
+            <!-- Action Controls Styled into the Bottom-Right Corner -->
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                <a href="index.php" class="btn btn-light px-4 py-2 fw-semibold border rounded-3" style="color: #475569;">Reset</a>
+                <button type="submit" id="submitBtn" class="btn text-white px-4 py-2 fw-bold rounded-3 shadow d-flex align-items-center gap-2" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">
+                    🔍 Search &amp; Issue Pass
                 </button>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <script>
@@ -301,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const addAccBtn = document.getElementById('addAccBtn');
         const accompanyingWrapper = document.getElementById('accompanyingWrapper');
 
-        // Dynamic Rows Controller Logic (Fully mobile stack optimized)
+        // Dynamic Rows Controller Logic
         addAccBtn.addEventListener('click', function() {
             const currentRows = accompanyingWrapper.querySelectorAll('.acc-box').length;
             if (currentRows >= 6) {
@@ -313,9 +308,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             div.className = 'acc-box animate-fade-in';
             div.innerHTML = `
                 <div class="row g-2 mb-2">
-                    <div class="col-12 col-md-4"><input type="text" name="accName[]" class="form-control py-2" placeholder="Full Name" required></div>
-                    <div class="col-12 col-md-4"><input type="text" name="accCid[]" class="form-control py-2" placeholder="CID No." required></div>
-                    <div class="col-12 col-md-4"><input type="text" name="accRelation[]" class="form-control py-2" placeholder="Relation" required></div>
+                    <div class="col-12 col-md-4"><input type="text" name="accName[]" class="form-control form-control-sm py-1.5" placeholder="Full Name" required></div>
+                    <div class="col-12 col-md-4"><input type="text" name="accCid[]" class="form-control form-control-sm py-1.5" placeholder="CID No." required></div>
+                    <div class="col-12 col-md-4"><input type="text" name="accRelation[]" class="form-control form-control-sm py-1.5" placeholder="Relation" required></div>
                 </div>
                 <button type="button" class="btn btn-sm btn-link text-danger p-0 position-absolute end-0 top-0 mt-1 me-2 remove-acc-btn" style="text-decoration:none; font-size:0.8rem;">✕ Remove</button>
             `;
