@@ -1,7 +1,7 @@
 <?php
 // 🚀 SUPABASE CLOUD DATA NETWORK PIPELINE
 define('SUPABASE_URL', 'https://stjcymykqpqkurrlezdq.supabase.co');
-define('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxY3VybGV6ZHEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4NTE1Njk0NywiZXhwIjoyMTAwNzMyOTQ3fQ.xxxx'); // Placeholder: You will need to replace this string with your long "anon public" key if needed
+define('SUPABASE_KEY', 'sb_publishable_3pv8ZKvVnibn91bhWQ0cMA_Aw5xjf51'); // Placeholder: You will need to replace this string with your long "anon public" key if needed
 
 function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
     $cleanUrl = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($endpoint, '/');
