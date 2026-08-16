@@ -280,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <a href="index.php" class="btn btn-light px-4 py-2 fw-semibold border rounded-3" style="color: #475569;">Reset</a>
                 <button type="submit" id="submitBtn" class="btn text-white px-4 py-2 fw-bold rounded-3 shadow d-flex align-items-center gap-2" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">
-                    🔍 Search &amp; Issue Pass
+                    Verify &amp; Issue Pass
                 </button>
             </div>
         </form>
