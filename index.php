@@ -78,6 +78,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Extract the unique row database ID key index
         $recordId = $insertedRecord['id'] ?? null;
         
+    if (!$errorMessage) {
+        $documentPayload = [
+            'inmate_name' => $inmateName,
+            'inmate_cid' => $inmateCid,
+            'block' => $block,
+            'visitor_name' => $visitorName,
+            'visitor_cid' => $visitorCid,
+            'relationship' => $relationship,
+            'visitor_type' => $visitorType,
+            'cid_photo' => $photoEncodedString,
+            'accompanying_data' => $accompanyingList,
+            'status' => 'Pending'
+        ];
+
+        // Direct Cloud Insertion Operation!
+        $insertedRecord = querySupabaseCloud("visitors", "POST", $documentPayload);
+        
+        // 🚀 Read the unique ID from our newly un-wrapped flat record layer object package
+        $recordId = $insertedRecord['id'] ?? null;
+        
         if (empty($recordId)) {
             $errorMessage = "❌ Cloud Connection Fault: Please verify your Supabase endpoint routing definitions.";
         } else {
@@ -99,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
         }
     }
+
 }
 ?>
 
@@ -179,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span>Accompanying Visitors Roster</span>
                 <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
             </div>
-            <div class="text-muted small mb-3">Maximum limit: <strong>6 accompanying passengers</strong>.</div>
+            <div class="text-muted small mb-3">Maximum limit: <strong>5 Accompanying Visitors with 1 Primary Visitor </strong>.</div>
             <div id="accompanyingWrapper"></div>
 
             <!-- Primary Visitor Profile Section -->
