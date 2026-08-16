@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Check ban list in Supabase Cloud
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
         $banCheck = querySupabaseCloud("banned_inmates?inmate_cid=eq." . urlencode($inmateCid), "GET");
-        if (!empty($banCheck) && is_array($banCheck) && isset($banCheck[0])) {
+        if (!empty($banCheck) && is_array($banCheck)) {
             $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
         }
     }
@@ -73,14 +73,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Direct Cloud Insertion Operation!
         $insertedRecord = querySupabaseCloud("visitors", "POST", $documentPayload);
         
-        // 🚀 SAFEKEEPING VERIFICATION CONNECTOR CHECK
-        if (empty($insertedRecord) || !is_array($insertedRecord) || (isset($insertedRecord[0]) && isset($insertedRecord[0]['id']) === false && isset($insertedRecord['id']) === false)) {
+        // 🚀 SMART RESPONSE PARSER: Unpack single items out of Postgres collection arrays
+        $recordId = null;
+        if (is_array($insertedRecord) && !empty($insertedRecord)) {
+            if (isset($insertedRecord[0]['id'])) {
+                $recordId = $insertedRecord[0]['id']; // Extracted out of array wrapper [{id: ...}]
+            } elseif (isset($insertedRecord['id'])) {
+                $recordId = $insertedRecord['id'];    // Fallback if object is direct
+            }
+        }
+        
+        // Validation check gate
+        if (empty($recordId)) {
             $errorMessage = "❌ Cloud Connection Fault: Please verify that your long Supabase Anon Public Key inside db.php is valid and complete.";
         } else {
-            // Support both object and object array payload mapping return structures from REST APIs
-            $recordData = isset($insertedRecord[0]) ? $insertedRecord[0] : $insertedRecord;
-            $recordId = $recordData['id'] ?? time();
-
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
             $host = $_SERVER['HTTP_HOST'];
             if (strpos($host, 'render.local') !== false || $host === 'localhost') {
