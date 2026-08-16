@@ -40,44 +40,64 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorMessage = "❌ Registration Rejected: You cannot have more than 6 accompanying visitors per application.";
     }
 
+    // Check ban list in Supabase Cloud
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
-        $checkBan = $db->prepare("SELECT COUNT(*) FROM banned_inmates WHERE inmateCid = ?");
-        $checkBan->execute([$inmateCid]);
-        if ($checkBan->fetchColumn() > 0) {
+        $banCheck = querySupabaseCloud("banned_inmates?inmate_cid=eq." . urlencode($inmateCid), "GET");
+        if (!empty($banCheck) && is_array($banCheck) && isset($banCheck[0])) {
             $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
         }
     }
 
-    $photoPath = '';
+    // Process file upload safely using image base64 inline encoding block parameters
+    $photoEncodedString = '';
     if (!$errorMessage && isset($_FILES['cidPhoto']) && $_FILES['cidPhoto']['error'] === 0) {
-        $targetDir = "uploads/";
-        if (!file_exists($targetDir)) { mkdir($targetDir, 0777, true); }
-        $fileName = "CID-" . time() . "_" . basename($_FILES['cidPhoto']['name']);
-        $targetFilePath = $targetDir . $fileName;
-        
-        if (move_uploaded_file($_FILES['cidPhoto']['tmp_name'], $targetFilePath)) {
-            $photoPath = $targetFilePath;
-        } else {
-            $errorMessage = "⚠️ Failed to process and upload your identification document snapshot.";
-        }
+        $fileType = $_FILES['cidPhoto']['type'];
+        $photoEncodedString = 'data:' . $fileType . ';base64,' . base64_encode(file_get_contents($_FILES['cidPhoto']['tmp_name']));
     }
 
     if (!$errorMessage) {
-        $flatAccompanyingText = !empty($accompanyingList) ? json_encode($accompanyingList) : null;
-
-        $stmt = $db->prepare("INSERT INTO visitors (inmateName, inmateCid, block, visitorName, visitorCid, relationship, visitorType, cidPhoto, accompanyingData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$inmateName, $inmateCid, $block, $visitorName, $visitorCid, $relationship, $visitorType, $photoPath, $flatAccompanyingText]);
-        
-        // Push the database update back to GitHub
-        backupDatabaseToGitHub();
-
-        $successData = [
-            'name' => $visitorName, 
-            'cid' => $visitorCid, 
-            'type' => $visitorType,
-            'photo' => $photoPath,
-            'count' => count($accompanyingList)
+        // Construct payload document mapping parameters matching database column rules
+        $documentPayload = [
+            'inmate_name' => $inmateName,
+            'inmate_cid' => $inmateCid,
+            'block' => $block,
+            'visitor_name' => $visitorName,
+            'visitor_cid' => $visitorCid,
+            'relationship' => $relationship,
+            'visitor_type' => $visitorType,
+            'cid_photo' => $photoEncodedString,
+            'accompanying_data' => $accompanyingList,
+            'status' => 'Pending'
         ];
+
+        // Direct Cloud Insertion Operation!
+        $insertedRecord = querySupabaseCloud("visitors", "POST", $documentPayload);
+        
+        // 🚀 SAFEKEEPING VERIFICATION CONNECTOR CHECK
+        if (empty($insertedRecord) || !is_array($insertedRecord) || (isset($insertedRecord[0]) && isset($insertedRecord[0]['id']) === false && isset($insertedRecord['id']) === false)) {
+            $errorMessage = "❌ Cloud Connection Fault: Please verify that your long Supabase Anon Public Key inside db.php is valid and complete.";
+        } else {
+            // Support both object and object array payload mapping return structures from REST APIs
+            $recordData = isset($insertedRecord[0]) ? $insertedRecord[0] : $insertedRecord;
+            $recordId = $recordData['id'] ?? time();
+
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+            $host = $_SERVER['HTTP_HOST'];
+            if (strpos($host, 'render.local') !== false || $host === 'localhost') {
+                $host = '://onrender.com'; 
+            }
+            
+            $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $recordId;
+
+            $successData = [
+                'name' => $visitorName, 
+                'cid' => $visitorCid, 
+                'type' => $visitorType,
+                'photo' => $photoEncodedString,
+                'count' => count($accompanyingList),
+                'url' => $verificationUrl
+            ];
+        }
     }
 }
 ?>
@@ -168,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <div class="p-4 p-md-5 bg-white d-flex flex-column align-items-center justify-content-center text-center">
             <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center small">
-                ✅ Record Registered &amp; Cloud Synced Successfully
+                ✅ Record Registered &amp; Cloud Saved Successfully
             </div>
             
             <p class="text-secondary small mb-2 px-1">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your credentials to execute verification logs.</p>
@@ -204,6 +224,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="form-card-container mx-auto animate-fade-in" style="max-width: 850px;">
         <form action="index.php" method="POST" enctype="multipart/form-data">
             
+            <!-- Error Alerts Header Block -->
+            <?php if ($errorMessage): ?>
+                <div class="alert alert-danger p-3 mb-4 rounded-3 small fw-semibold"><?php echo $errorMessage; ?></div>
+            <?php endif; ?>
+
             <!-- Classification Row -->
             <div class="row mb-4">
                 <div class="col-12 col-md-6">
@@ -218,16 +243,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Section Header: Inmate Parameters -->
             <div id="inmateSection">
                 <div class="section-divider-title">Inmate Identification Parameters</div>
                 
-                <!-- Dual-Column Balanced Grid Row Box -->
                 <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
                     <div>
                         <label class="form-label custom-label-style">Inmate National CID</label>
                         <input type="text" name="inmateCid" id="inmateCid" class="form-control custom-input-style" placeholder="Enter Inmate CID Number">
-                        <div id="banStatus" class="alert alert-danger p-2 mt-2 json-alert small fw-bold d-none"></div>
                     </div>
                     <div>
                         <label class="form-label custom-label-style">Cell Block Location</label>
@@ -248,7 +270,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Accompanying Visitors Section -->
             <div class="section-divider-title d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span>Accompanying Visitors Roster</span>
                 <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
@@ -259,7 +280,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Dynamic rows injected here by JavaScript -->
             </div>
 
-            <!-- Primary Visitor Profile Section -->
             <div class="section-divider-title">Primary Visitor Identity Profile</div>
             <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
                 <div>
@@ -276,11 +296,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Action Controls Styled into the Bottom-Right Corner -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <a href="index.php" class="btn btn-light px-4 py-2 fw-semibold border rounded-3" style="color: #475569;">Reset</a>
                 <button type="submit" id="submitBtn" class="btn text-white px-4 py-2 fw-bold rounded-3 shadow d-flex align-items-center gap-2" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">
-                    Verify &amp; Issue Pass
+                    Verify Credentials &amp; Issue Pass
                 </button>
             </div>
         </form>
@@ -289,10 +308,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>
         const typeSelect = document.getElementById('visitorType');
         const inmateSection = document.getElementById('inmateSection');
-        const inmateCid = document.getElementById('inmateCid');
-        const submitBtn = document.getElementById('submitBtn');
-        const banStatus = document.getElementById('banStatus');
-        
         const addAccBtn = document.getElementById('addAccBtn');
         const accompanyingWrapper = document.getElementById('accompanyingWrapper');
 
@@ -327,28 +342,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if(this.value === 'Others') {
                 inmateSection.style.display = 'none';
                 inmateSection.querySelectorAll('input, select').forEach(el => { el.removeAttribute('required'); el.value = ''; });
-                submitBtn.disabled = false;
-                banStatus.classList.add('d-none');
             } else {
                 inmateSection.style.display = 'block';
-                inmateSection.querySelectorAll('.target-field, #inmateCid').forEach(el => el.setAttribute('required', 'true'));
+                inmateSection.querySelectorAll('input, select').forEach(el => {
+                    if (el.id !== 'inmateCid') el.setAttribute('required', 'true');
+                });
             }
-        });
-
-        inmateCid.addEventListener('blur', async function() {
-            if(!this.value || typeSelect.value === 'Others') return;
-            try {
-                const res = await fetch('check_ban.php?cid=' + this.value);
-                const data = await res.json();
-                if(data.banned) {
-                    banStatus.textContent = "⚠️ ACCESS DENIED: This inmate's privileges are currently suspended due to active administrative restrictions.";
-                    banStatus.classList.remove('d-none');
-                    submitBtn.disabled = true;
-                } else {
-                    banStatus.classList.add('d-none');
-                    submitBtn.disabled = false;
-                }
-            } catch(e) { console.error(e); }
         });
     </script>
 <?php endif; ?>
