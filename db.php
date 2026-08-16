@@ -1,9 +1,10 @@
 <?php
 // 🚀 SUPABASE CLOUD DATA NETWORK PIPELINE
-define('SUPABASE_URL', 'https://stjcymykqpqkurrlezdq.supabase.co');
-define('SUPABASE_KEY', 'sb_publishable_3pv8ZKvVnibn91bhWQ0cMA_Aw5xjf51'); // Placeholder: You will need to replace this string with your long "anon public" key if needed
+define('SUPABASE_URL', 'https://supabase.co');
+define('SUPABASE_KEY', 'sb_publishable_3pv8ZKvVnibn91bhWQ0cMt1kM5U');
 
 function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
+    // Standard routing parser to avoid endpoint double mapping errors
     $cleanUrl = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($endpoint, '/');
     
     $headers = [
@@ -31,6 +32,13 @@ function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
         return [];
     }
     
-    return json_decode($response, true);
+    $decodedData = json_decode($response, true);
+    
+    // Auto-parse array records natively from standard REST endpoints
+    if (($method === 'POST' || $method === 'PATCH') && is_array($decodedData) && !empty($decodedData)) {
+        return isset($decodedData[0]) ? $decodedData[0] : $decodedData;
+    }
+    
+    return $decodedData;
 }
 ?>
