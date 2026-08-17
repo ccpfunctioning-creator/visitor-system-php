@@ -1,46 +1,90 @@
 <?php
-// 🚀 SUPABASE CLOUD REST DATA EDGE ROUTER PIPELINE
-define('SUPABASE_URL', 'https://supabase.co');
+// 🚀 UNLOCKED DIRECTORY ENGINE ROUTING PIPELINE
+// Shift your data location out of the restricted root folder into the unlocked system directory
+$dbFile = '/tmp/database.sqlite';
 
-function querySupabaseCloud($endpoint, $method = 'GET', $payload = null) {
-    // ⚡ MASTER SERVICE API TOKEN MATCHING YOUR REPOSITORY
-    $tokenSignature = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0amN5bXlrcXBxY3VybGV6ZHEiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTc4NTE1Njk0NywiZXhwIjoyMTAwNzMyOTQ3fQ.vNnQ9YJgV0nE_f7nZ29K-G9WnK9M5U_vNnQ9YJgV0nE";
-    
-    $cleanUrl = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . ltrim($endpoint, '/');
-    
-    $headers = [
-        'apikey: ' . $tokenSignature,
-        'Authorization: Bearer ' . $tokenSignature,
-        'Content-Type: application/json',
-        'Prefer: return=representation' // Demands record data back from cloud table layers
+try {
+    // Open or create a persistent database file stream container safely inside /tmp
+    $db = new PDO("sqlite:" . $dbFile);
+    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    // Build standard data log tracking structures
+    $db->exec("CREATE TABLE IF NOT EXISTS visitors (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inmateName TEXT,
+        inmateCid TEXT,
+        block TEXT,
+        visitorName TEXT NOT NULL,
+        visitorCid TEXT NOT NULL,
+        relationship TEXT,
+        visitorType TEXT NOT NULL,
+        cidPhoto TEXT NOT NULL,
+        accompanyingData TEXT,
+        status TEXT DEFAULT 'Pending',
+        registeredAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        verifiedAt DATETIME
+    )");
+
+    $db->exec("CREATE TABLE IF NOT EXISTS banned_inmates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inmateCid TEXT UNIQUE NOT NULL,
+        reason TEXT
+    )");
+
+} catch (PDOException $e) {
+    die("Local registry initialization crash: " . $e->getMessage());
+}
+
+// 🚀 SECURE GITHUB REMOTE STORAGE AUTOMATION AGENT BACKUP PIPELINE
+function backupDatabaseToGitHub() {
+    $username = 'ccpfunctioning-creator'; 
+    $repo = 'visitor-system-php';
+    $token = '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';
+    $filePath = 'database.sqlite';
+    $localFile = '/tmp/database.sqlite'; // Read from our unlocked /tmp folder
+
+    if (!file_exists($localFile) || filesize($localFile) === 0) {
+        return;
+    }
+
+    $apiUrl = "https://github.com{$username}/{$repo}/contents/{$filePath}";
+    $fileContent = base64_encode(file_get_contents($localFile));
+
+    // Step A: Look up if a file history tag exists on GitHub to prevent conflict blocks
+    $opts = [
+        "http" => [
+            "method" => "GET",
+            "header" => "Authorization: token {$token}\r\n" .
+                        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n"
+        ]
     ];
+    $context = stream_context_create($opts);
+    $response = @file_get_contents($apiUrl, false, $context);
 
-    $ch = curl_init($cleanUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-    
-    if ($payload !== null) {
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    $sha = null;
+    if ($response !== false) {
+        $result = json_decode($response, true);
+        $sha = $result['sha'];
     }
-    
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    if ($httpCode >= 400) {
-        return [];
-    }
-    
-    $decodedData = json_decode($response, true);
-    
-    // 🚀 UNWRAP SUPABASE COLLECTION ARRAYS IMMEDIATELY
-    if (($method === 'POST' || $method === 'PATCH') && is_array($decodedData) && !empty($decodedData)) {
-        if (isset($decodedData[0])) {
-            return $decodedData[0]; // Extract the flat record object out of the initial index envelope
-        }
-    }
-    
-    return $decodedData;
+
+    // Step B: Push the binary database file directly online into your repository
+    $payload = [
+        "message" => "chore: automatic visitor registry cluster database save [" . date('Y-m-d H:i:s') . "]",
+        "content" => $fileContent,
+        "branch" => "main"
+    ];
+    if ($sha) { $payload["sha"] = $sha; }
+
+    $putOpts = [
+        "http" => [
+            "method" => "PUT",
+            "header" => "Authorization: token {$token}\r\n" .
+                        "Content-Type: application/json\r\n" .
+                        "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64)\r\n",
+            "content" => json_encode($payload)
+        ]
+    ];
+    $putContext = stream_context_create($putOpts);
+    @file_get_contents($apiUrl, false, $putContext);
 }
 ?>
