@@ -3,156 +3,155 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Security: Restrict access to Gate 2 duty staff and Administrators only
-if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'gate2' && $_SESSION['role'] !== 'admin')) {
+// Security Enforcement Layer: Restrict checkpoint to logged-in operators
+if (!isset($_SESSION['username']) || !in_array($_SESSION['role'], ['gate2', 'admin'])) {
     header('Location: login.php');
     exit;
 }
 
 require_once 'db.php';
-$actionMessage = null;
 
-// Process Gate 2 Status Decisions (Verify or Reject Actions)
+$searchQuery = $_GET['search'] ?? '';
+$searchResult = null;
+$searchAttempted = false;
+$updateMessage = null;
+
+// Handle Verification Pass Status Check-In Operations (Check-In / Out toggles)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_id'])) {
-    $recordId = $_POST['action_id'];
-    $decision = $_POST['decision'] ?? '';
+    $actionId = $_POST['action_id'];
+    $currentStatus = $_POST['current_status'];
+    $newStatus = ($currentStatus === 'Pending') ? 'Checked-In' : 'Checked-Out';
+    
+    $updatePayload = [
+        'status' => $newStatus,
+        'verified_at' => date('Y-m-d H:i:s')
+    ];
 
-    if ($decision === 'Verify') {
-        $stmt = $db->prepare("UPDATE visitors SET status = 'Verified', verifiedAt = CURRENT_TIMESTAMP WHERE id = ?");
-        $stmt->execute([$recordId]);
-        backupDatabaseToGitHub(); // 🚀 Sync database backup file to GitHub
-        $actionMessage = "✅ Record successfully cleared and marked as Verified.";
-    } elseif ($decision === 'Reject') {
-        $stmt = $db->prepare("UPDATE visitors SET status = 'Rejected', verifiedAt = CURRENT_TIMESTAMP WHERE id = ?");
-        $stmt->execute([$recordId]);
-        backupDatabaseToGitHub(); // 🚀 Sync database backup file to GitHub
-        $actionMessage = "❌ Record successfully blocked and marked as Rejected.";
+    // Update state seamlessly via our driverless cloud API router framework mapping parameters
+    querySupabaseCloud('visitors', 'UPDATE', $updatePayload, ['id' => 'eq.' . $actionId]);
+    $updateMessage = "✅ Log Successfully Updated: Clear Pass Status changed to <strong>{$newStatus}</strong>.";
+    
+    // Automatically re-fetch target record to present the freshly updated parameters row on screen
+    $searchResult = querySupabaseCloud('visitors', 'SELECT', [], ['id' => 'eq.' . $actionId]);
+    if (!empty($searchResult)) {
+        $searchResult = $searchResult[0]; // Extract row dictionary container from cloud representation index array
     }
+    $searchAttempted = true;
 }
 
-// Look up a specific record if a reference ID parameter is present
-$searchId = isset($_GET['searchId']) ? $_GET['searchId'] : null;
-if ($searchId) {
-    $stmt = $db->prepare("SELECT * FROM visitors WHERE id = ?");
-    $stmt->execute([$searchId]);
-    $queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} else {
-    // Default: Pull all active, unchecked applications awaiting desk validation
-    $stmt = $db->prepare("SELECT * FROM visitors WHERE status = 'Pending' ORDER BY registeredAt ASC");
-    $stmt->execute();
-    $queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// Handle Checkpoint Security Queue Index Card Queries via Visitor National CID number
+if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    // Search both primary mapping identifiers to catch entry queries immediately
+    $records = querySupabaseCloud('visitors', 'SELECT', [], ['visitor_cid' => 'eq.' . trim($searchQuery)]);
+    
+    if (!empty($records)) {
+        $searchResult = $records[0]; // Snatch absolute latest logging transaction row tracking dataset mapping array
+    }
+    $searchAttempted = true;
 }
 ?>
 
 <?php include 'header.php'; ?>
 
-<style>
-    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
-    .duty-card { background: #ffffff; border-radius: 20px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.04); overflow: hidden; margin-bottom: 1.5rem; border: 1px solid #e2e8f0; }
-    .duty-photo-frame { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 0.5rem; width: 240px; margin: 0 auto; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-</style>
-
-<div class="container py-2 py-md-4 animate-fade-in">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 border-bottom pb-3">
-        <div>
-            <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Gate 2: Credentials Audit &amp; Verification Desk</h3>
-            <p class="text-secondary small m-0">Crosscheck physical identity papers against permanent repository entries.</p>
-        </div>
-        <span class="badge bg-dark px-3 py-2 rounded-pill font-monospace small">Active Duty Queue</span>
+<div class="beautiful-card mx-auto animate-fade-in shadow-lg" style="max-width: 600px;">
+    <div class="card-header-gradient text-center">
+        <h4 class="m-0 fw-bold" style="color: white; padding: 0.5rem 0;">👮 Gate 2: Security Verification Desk</h4>
     </div>
+    
+    <div class="p-4 bg-white">
+        <?php if ($updateMessage): ?>
+            <div class="alert alert-success py-2.5 px-3 rounded-3 small fw-semibold mb-4"><?php echo $updateMessage; ?></div>
+        <?php endif; ?>
 
-    <?php if ($actionMessage): ?>
-        <div class="alert alert-info py-2 px-3 rounded-3 small fw-semibold shadow-sm mb-4"><?php echo $actionMessage; ?></div>
-    <?php endif; ?>
-
-    <?php if (empty($queue) || !is_array($queue)): ?>
-        <div class="alert alert-light text-center py-5 rounded-4 shadow-sm border border-dashed">
-            <h5 class="text-muted fw-bold m-0">🎉 All Clear! No Pending Entries</h5>
-            <p class="text-secondary small m-0 mt-1">New registrations filed from Gate 1 desks will pop up right here live.</p>
-        </div>
-    <?php else: ?>
-        <?php foreach ($queue as $item): ?>
-            <div class="duty-card shadow-sm animate-fade-in">
-                <div class="row g-0">
-                    
-                    <!-- Profile Logs Column Block -->
-                    <div class="col-12 col-lg-8 p-3 p-md-4">
-                        <h4 class="fw-bold text-primary mb-1"><?php echo htmlspecialchars($item['visitorName']); ?></h4>
-                        <div class="d-flex flex-wrap gap-1.5 align-items-center mt-1 mb-3">
-                            <span class="badge bg-light text-secondary border font-monospace small">Primary CID: <?php echo htmlspecialchars($item['visitorCid']); ?></span>
-                            <span class="badge bg-primary text-white small" style="background-color: #6366f1 !important;"><?php echo htmlspecialchars($item['visitorType']); ?> Visit</span>
-                        </div>
-                        
-                        <?php if (!empty($item['inmateName'])): ?>
-                            <div class="p-3 bg-light rounded-3 my-3 border border-light shadow-sm">
-                                <div class="text-uppercase tracking-wider small fw-bold text-secondary mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Target Inmate Destination</div>
-                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($item['inmateName']); ?> <span class="text-muted font-normal small">(CID: <?php echo htmlspecialchars($item['inmateCid']); ?>)</span></div>
-                                <div class="mt-1">
-                                    <span class="badge bg-dark small"><?php echo htmlspecialchars($item['block']); ?></span>
-                                    <span class="text-secondary small ms-1">Relationship: <strong><?php echo htmlspecialchars($item['relationship']); ?></strong></span>
-                                </div>
-                            </div>
-                        <?php endif; ?>
-
-                        <!-- Accompanying Roster Grid Rendering -->
-                        <h6 class="fw-bold mt-3 text-secondary small text-uppercase" style="letter-spacing: 0.5px;">👥 Group Members Accompanied</h6>
-                        <?php 
-                        $accompaniedList = !empty($item['accompanyingData']) ? json_decode($item['accompanyingData'], true) : [];
-                        if (!empty($accompaniedList) && is_array($accompaniedList)): 
-                        ?>
-                            <div class="table-responsive mt-2">
-                                <table class="table table-sm table-hover table-bordered bg-white rounded-3 overflow-hidden mb-0">
-                                    <thead class="table-light text-secondary small">
-                                        <tr><th>Full Name</th><th>National CID No.</th><th>Relationship</th></tr>
-                                    </thead>
-                                    <tbody class="small">
-                                        <?php foreach ($accompaniedList as $acc): ?>
-                                            <tr>
-                                                <td><strong><?php echo htmlspecialchars($acc['name'] ?? ''); ?></strong></td>
-                                                <td class="font-monospace text-secondary"><?php echo htmlspecialchars($acc['cid'] ?? ''); ?></td>
-                                                <td><span class="badge bg-light text-dark border"><?php echo htmlspecialchars($acc['relation'] ?? ''); ?></span></td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                        <?php else: ?>
-                            <p class="text-muted small m-0 mt-1">Individual Entry (No accompanying roster logs attached).</p>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Photo Validation Controls Column Block -->
-                    <div class="col-12 col-lg-4 p-3 p-md-4 bg-light d-flex flex-column justify-content-between align-items-center text-center border-start">
-                        <div class="w-100 d-flex flex-column align-items-center">
-                            <div class="text-uppercase tracking-wider small fw-bold text-secondary mb-3" style="font-size: 0.72rem; letter-spacing: 0.5px;">Gate 1 Photo Document Audit</div>
-                            <?php if (!empty($item['cidPhoto'])): ?>
-                                <div class="duty-photo-frame mb-3">
-                                    <img src="<?php echo $item['cidPhoto']; ?>" class="img-fluid rounded-2" style="max-height: 180px; width: 100%; object-fit: contain; display: block;" alt="CID File">
-                                </div>
-                            </div>
-                            <?php else: ?>
-                                <div class="alert alert-secondary small py-4 rounded-3 mb-3 w-100">No verification photo snapshot file uploaded.</div>
-                            <?php endif; ?>
-                        </div>
-
-                        <form action="gate2.php" method="POST" class="w-100 mt-2">
-                            <input type="hidden" name="action_id" value="<?php echo $item['id']; ?>">
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <button type="submit" name="decision" value="Reject" class="btn btn-outline-danger w-100 py-2 fw-bold rounded-3 small">✕ Reject Entry</button>
-                                </div>
-                                <div class="col-6">
-                                    <button type="submit" name="decision" value="Verify" class="btn btn-success w-100 py-2 fw-bold text-white shadow-sm rounded-3 small" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); border: none;">✓ Verify Entry</button>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-
-                </div>
+        <!-- Search Box Console Row Framework Mapping -->
+        <form method="GET" action="gate2.php" class="mb-4">
+            <label class="form-label custom-label-style">Scan or Enter Visitor National CID</label>
+            <div class="input-group">
+                <input type="text" name="search" class="form-control custom-input-style" placeholder="Type CID number to parse query logs..." value="<?php echo htmlspecialchars($searchQuery); ?>" required>
+                <button type="submit" class="btn text-white px-4 fw-bold" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 0 10px 10px 0 !important;">Verify</button>
             </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
+        </form>
+
+        <?php if ($searchAttempted): ?>
+            <?php if ($searchResult): ?>
+                <!-- 🎯 Visitor Record Log Data Sheet Found Viewport Frame Box -->
+                <div class="section-container bg-light border p-3 rounded-3 animate-fade-in">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 border-bottom pb-2">
+                        <span class="fw-bold text-dark small">Ecosystem Transaction Logs Grid</span>
+                        <?php 
+                            $status = $searchResult['status'] ?? 'Pending';
+                            $badgeClass = 'bg-warning text-dark';
+                            if ($status === 'Checked-In') $badgeClass = 'bg-success text-white';
+                            if ($status === 'Checked-Out') $badgeClass = 'bg-danger text-white';
+                        ?>
+                        <span class="badge <?php echo $badgeClass; ?> px-2 py-1.5 rounded small"><?php echo $status; ?></span>
+                    </div>
+
+                    <div class="text-center mb-3">
+                        <div class="mx-auto border p-1 rounded bg-white shadow-sm mb-2" style="width: 150px; height: 180px; overflow: hidden;">
+                            <img src="<?php echo htmlspecialchars($searchResult['cid_photo'] ?? 'https://placehold.co'); ?>" class="w-100 h-100" style="object-fit: cover;" alt="Visitor Token Photo Profile Snapshot ID">
+                        </div>
+                        <h5 class="fw-bold text-dark m-0"><?php echo htmlspecialchars($searchResult['visitor_name']); ?></h5>
+                        <small class="font-monospace text-muted">CID Reference No: <?php echo htmlspecialchars($searchResult['visitor_cid']); ?></small>
+                    </div>
+
+                    <div class="row row-cols-2 g-2 text-start small border-top pt-2">
+                        <div><span class="text-secondary d-block">Classification</span><strong>💼 <?php echo htmlspecialchars($searchResult['visitor_type']); ?></strong></div>
+                        <div><span class="text-secondary d-block">Target Inmate CID</span><strong>🆔 <?php echo htmlspecialchars($searchResult['inmate_cid'] ?? 'N/A (Official)'); ?></strong></div>
+                        <div class="mt-2"><span class="text-secondary d-block">Inmate Full Name</span><strong>👤 <?php echo htmlspecialchars($searchResult['inmate_name'] ?? 'N/A'); ?></strong></div>
+                        <div class="mt-2"><span class="text-secondary d-block">Target Cell Location</span><strong>🏢 <?php echo htmlspecialchars($searchResult['block'] ?? 'N/A'); ?></strong></div>
+                    </div>
+
+                    <!-- Accompanying parsing loops checks validation frame logic row box maps -->
+                    <?php if (!empty($searchResult['accompanying_data'])): ?>
+                        <?php $accList = json_decode($searchResult['accompanying_data'], true); ?>
+                        <?php if (!empty($accList)): ?>
+                            <div class="mt-3 border-top pt-2 text-start">
+                                <span class="text-secondary d-block small mb-1">Linked Passengers Roster:</span>
+                                <div class="bg-white p-2 border rounded-3 small max-height-overflow" style="max-height: 120px; overflow-y: auto;">
+                                    <?php foreach ($accList as $acc): ?>
+                                        <div class="d-flex justify-content-between font-monospace border-bottom py-1 last-border-none text-dark" style="font-size: 0.8rem;">
+                                            <span>👥 <?php echo htmlspecialchars($acc['name']); ?></span>
+                                            <span class="text-muted">CID: <?php echo htmlspecialchars($acc['cid']); ?> (<?php echo htmlspecialchars($acc['relation']); ?>)</span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
+                    <?php endif; ?>
+
+                    <!-- Action Operation Context Toggles Execution Control Button Base -->
+                    <?php if ($status !== 'Checked-Out'): ?>
+                        <form method="POST" action="gate2.php" class="mt-3 pt-2 border-top">
+                            <input type="hidden" name="action_id" value="<?php echo $searchResult['id']; ?>">
+                            <input type="hidden" name="current_status" value="<?php echo $status; ?>">
+                            
+                            <?php if ($status === 'Pending'): ?>
+                                <button type="submit" class="btn btn-success w-100 fw-bold py-2" style="border-radius: 10px;">
+                                    🔒 Validate Token &amp; Execute Check-In Log
+                                </button>
+                            <?php else: ?>
+                                <button type="submit" class="btn btn-danger w-100 fw-bold py-2" style="border-radius: 10px;">
+                                    🔓 Terminate Authorization Pass &amp; Check-Out
+                                </button>
+                            <?php endif; ?>
+                        </form>
+                    <?php else: ?>
+                        <div class="alert alert-secondary text-center small fw-semibold m-0 mt-3 py-2 rounded-3">
+                            ⛔ This security pass clearance cycle has already terminated.
+                        </div>
+                    <?php endif; ?>
+                </div>
+            <?php else: ?>
+                <!-- No Record Match Output Warning Notice Screen Wrapper -->
+                <div class="alert alert-danger text-center small fw-semibold m-0 py-3 rounded-3 animate-fade-in shadow-sm">
+                    🔍 ACCESS REJECTED: No verified Gate 1 registration records found matching that Visitor CID reference token parameter.
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
+    </div>
 </div>
+</div> <!-- Closing the master content limiter block -->
+</div> <!-- Closing the master center viewport wrapper block -->
 </body>
 </html>
