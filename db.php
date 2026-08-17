@@ -5,8 +5,6 @@ define('SUPABASE_URL', 'https://icmjvsxjhqjvzvyyolry.supabase.co');
 // 💡 PASTE YOUR EXTREMELY LONG PUBLIC ANON KEY HERE (Starts with eyJhbG...)
 define('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljbWp2c3hqaHFqdnp2eXlvbHJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Mjg4NTQsImV4cCI6MjEwMjUwNDg1NH0.X_jecxrmze9D1g0iCgbzLJxYlJyRkFVnMxdAnOwFvpg');
 
-
-
 function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
     $url = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . $tableName;
     
@@ -51,15 +49,17 @@ function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
         echo "<div class='alert alert-danger font-monospace small m-3'><strong>Supabase API Error ($httpCode):</strong> " . htmlspecialchars($response) . "</div>";
     }
 
-    // 🔐 Dynamic Array Processor Layer: Automatically rewrites old http links to secure https paths on the fly
-    if ($action === 'SELECT' && !empty($decodedData)) {
-        if (isset($decodedData[0])) {
+    // 🔐 BULLETPROOF LINK CONVERTER: Deep-parses the array to force convert any http reference paths to strict https parameters
+    if (!empty($decodedData) && is_array($decodedData)) {
+        // Check if it is a list of rows
+        if (isset($decodedData[0]) && is_array($decodedData[0])) {
             foreach ($decodedData as &$row) {
                 if (!empty($row['cid_photo'])) {
                     $row['cid_photo'] = str_replace('http://', 'https://', $row['cid_photo']);
                 }
             }
         } else {
+            // Check if it is a single direct object row
             if (!empty($decodedData['cid_photo'])) {
                 $decodedData['cid_photo'] = str_replace('http://', 'https://', $decodedData['cid_photo']);
             }
