@@ -33,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    if (count($accompanyingList) > 6) {
-        $errorMessage = "❌ Registration Rejected: You cannot have more than 6 accompanying visitors per application.";
+    if (count($accompanyingList) > 5) {
+        $errorMessage = "❌ Registration Rejected: You cannot have more than 5 accompanying visitors per application.";
     }
 
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
@@ -133,11 +133,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form action="index.php" method="POST" enctype="multipart/form-data">
             <div class="row mb-4">
                 <div class="col-12">
-                    <label class="form-label custom-label-style">Visitor Classification</label>
+                    <label class="form-label custom-label-style">Visitor Classification | དབྱེ་རིམ། </label>
                     <select name="visitorType" id="visitorType" class="form-select custom-input-style" required>
-                        <option value="Personal">👪 Personal Visit</option><option value="Official">💼 Official Business</option>
-                        <option value="Conjugal">💍 Conjugal Visit</option><option value="Night Visitor">🌙 Night Visitor</option>
-                        <option value="Others">⚙️ Others (Hides Inmate Fields)</option>
+                        <option value="Personal">👪 Personal Visit | མི་ངོ་འཕྱད་མི། </option><option value="Official">💼 Official Visit | གཞུང་དོན་འཕྱད་མི། </option>
+                        <option value="Conjugal">💍 Conjugal Visit | གཉེན་སྒྲིག་འཕྱད་མི། </option><option value="Night Visitor">🌙 Night Visitor | ཞག་སྡོད་མི། </option>
+                        <option value="Others">⚙️ Others | གཞན་ཡང་། </option>
                     </select>
                 </div>
             </div>
@@ -146,11 +146,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="section-divider-title">Inmate Identification Parameters</div>
                 <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
                     <div>
-                        <label class="form-label custom-label-style">Inmate National CID</label>
+                        <label class="form-label custom-label-style">Inmate CID | ཁྲིམས་པའི་ངོ་སྤྲོད་་ལག་ཁྱེར་ཨང་།</label>
                         <input type="text" name="inmateCid" id="inmateCid" class="form-control custom-input-style" placeholder="Enter Inmate CID Number">
                     </div>
                     <div>
-                        <label class="form-label custom-label-style">Cell Block Location</label>
+                        <label class="form-label custom-label-style">Cell Block | ཁང་སྡེ། </label>
                         <select name="block" class="form-select custom-input-style">
                             <option value="Block I">Block I</option><option value="Block II">Block II</option><option value="Block III">Block III</option>
                             <option value="Block IV">Block IV</option><option value="Block V">Block V</option><option value="Block VI">Block VI</option>
@@ -158,11 +158,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </select>
                     </div>
                     <div>
-                        <label class="form-label custom-label-style">Inmate Full Name</label>
+                        <label class="form-label custom-label-style">Inmate Full Name | ཁྲིམས་པའི་ངོ་མིང་། </label>
                         <input type="text" name="inmateName" class="form-control target-field custom-input-style" placeholder="Enter Inmate Legal Full Name">
                     </div>
                     <div>
-                        <label class="form-label custom-label-style">Relationship with Inmate</label>
+                        <label class="form-label custom-label-style">Relationship with Inmate | ཁྲིམས་པའི་མཐུན་འབྲེལ། </label>
                         <input type="text" name="relationship" class="form-control target-field custom-input-style" placeholder="e.g., Spouse, Sibling, Parent">
                     </div>
                 </div>
@@ -170,30 +170,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <!-- Accompanying Visitors Roster Section -->
             <div class="section-divider-title d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <span>Accompanying Visitors Roster</span>
+                <span>Accompanying Visitors | ལྷན་ཅིག་འོང་མི= </span>
                 <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
             </div>
             <div class="text-muted small mb-3">Maximum limit: <strong>5 accompanying visitors</strong>.</div>
             <div id="accompanyingWrapper"></div>
 
             
-            <div class="section-divider-title">Primary Visitor Identity Profile</div>
+            <div class="section-divider-title">Primary Visitor Identity Profile | གཙོ་བོ་འཕྱད་མིའི་ངོ་རྟགས། </div>
             <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
                 <div>
-                    <label class="form-label custom-label-style">Primary Full Name</label>
+                    <label class="form-label custom-label-style">Primary Full Name | གཙོ་བོ་འཕྱད་མིའི་ངོ་མིང་། </label>
                     <input type="text" name="visitorName" class="form-control custom-input-style" placeholder="Enter your full legal name" required>
                 </div>
                 <div>
-                    <label class="form-label custom-label-style">Primary National CID</label>
+                    <label class="form-label custom-label-style">Primary National CID | གཙོ་བོ་འཕྱད་མིའི་ངོ་སྤྲོད་་ལག་ཁྱེར་ཨང་།</label>
                     <input type="text" name="visitorCid" class="form-control custom-input-style" placeholder="Enter your card number" required>
                 </div>
                 <div class="col-md-12">
-                    <label class="form-label custom-label-style">Upload Primary CID Image</label>
+                    <label class="form-label custom-label-style">Upload Primary CID Image | ངོ་སྤྲོད་་ལག་ཁྱེར་པར་བཙུགས་གནང་། </label>
                     <input type="file" name="cidPhoto" class="form-control custom-input-style" accept="image/*" required>
                 </div>
             </div>
              <!-- Official Visitor Declaration -->
-            <div class="section-divider-title">Official Visitor Declaration</div>
+            <div class="section-divider-title">Official Visitor Declaration |  གཞུང་འབྲེལ་ཁས་ལེན། </div>
             <div class="section-container bg-light border p-3 rounded-3 mb-4">
                 <div class="form-check d-flex align-items-start gap-2 m-0 text-start">
                     <input class="form-check-input custom-input-style flex-shrink-0" type="checkbox" id="declarationCheck" name="declaration_check" style="width: 20px; height: 20px; margin-top: 0.15rem;" required>
