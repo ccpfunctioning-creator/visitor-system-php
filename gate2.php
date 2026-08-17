@@ -12,29 +12,35 @@ if (!isset($_SESSION['role']) || ($_SESSION['role'] !== 'gate2' && $_SESSION['ro
 require_once 'db.php';
 $actionMessage = null;
 
-// Process Verify or Reject Status Decisions
+// Process Gate 2 Status Decisions (Verify or Reject Actions)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_id'])) {
     $recordId = $_POST['action_id'];
     $decision = $_POST['decision'] ?? '';
-    $statusText = ($decision === 'Verify') ? 'Verified' : 'Rejected';
-    
-    $payload = [
-        'status' => $statusText,
-        'verified_at' => date('Y-m-d H:i:s')
-    ];
-    
-    // Direct cloud record status updates
-    querySupabaseCloud("visitors?id=eq." . $recordId, "PATCH", $payload);
-    $actionMessage = "✅ Entry record successfully processed and marked as: " . $statusText;
+
+    if ($decision === 'Verify') {
+        $stmt = $db->prepare("UPDATE visitors SET status = 'Verified', verifiedAt = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$recordId]);
+        backupDatabaseToGitHub(); // 🚀 Sync database backup file to GitHub
+        $actionMessage = "✅ Record successfully cleared and marked as Verified.";
+    } elseif ($decision === 'Reject') {
+        $stmt = $db->prepare("UPDATE visitors SET status = 'Rejected', verifiedAt = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt->execute([$recordId]);
+        backupDatabaseToGitHub(); // 🚀 Sync database backup file to GitHub
+        $actionMessage = "❌ Record successfully blocked and marked as Rejected.";
+    }
 }
 
-// Check if a specific visitor tracking token pass reference code lookup is active
-$searchId = $_GET['searchId'] ?? null;
+// Look up a specific record if a reference ID parameter is present
+$searchId = isset($_GET['searchId']) ? $_GET['searchId'] : null;
 if ($searchId) {
-    $queue = querySupabaseCloud("visitors?id=eq." . urlencode($searchId), "GET");
+    $stmt = $db->prepare("SELECT * FROM visitors WHERE id = ?");
+    $stmt->execute([$searchId]);
+    $queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
-    // Default view: Query all active incoming applications waiting at the checkpoint desk
-    $queue = querySupabaseCloud("visitors?status=eq.Pending&order=registered_at.asc", "GET");
+    // Default: Pull all active, unchecked applications awaiting desk validation
+    $stmt = $db->prepare("SELECT * FROM visitors WHERE status = 'Pending' ORDER BY registeredAt ASC");
+    $stmt->execute();
+    $queue = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
 
@@ -51,7 +57,7 @@ if ($searchId) {
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4 border-bottom pb-3">
         <div>
             <h3 class="fw-bold text-dark m-0" style="letter-spacing: -0.5px;">Gate 2: Credentials Audit &amp; Verification Desk</h3>
-            <p class="text-secondary small m-0">Crosscheck physical identity papers against permanent cloud entries.</p>
+            <p class="text-secondary small m-0">Crosscheck physical identity papers against permanent repository entries.</p>
         </div>
         <span class="badge bg-dark px-3 py-2 rounded-pill font-monospace small">Active Duty Queue</span>
     </div>
@@ -72,16 +78,16 @@ if ($searchId) {
                     
                     <!-- Profile Logs Column Block -->
                     <div class="col-12 col-lg-8 p-3 p-md-4">
-                        <h4 class="fw-bold text-primary mb-1"><?php echo htmlspecialchars($item['visitor_name']); ?></h4>
+                        <h4 class="fw-bold text-primary mb-1"><?php echo htmlspecialchars($item['visitorName']); ?></h4>
                         <div class="d-flex flex-wrap gap-1.5 align-items-center mt-1 mb-3">
-                            <span class="badge bg-light text-secondary border font-monospace small">Primary CID: <?php echo htmlspecialchars($item['visitor_cid']); ?></span>
-                            <span class="badge bg-primary text-white small" style="background-color: #6366f1 !important;"><?php echo htmlspecialchars($item['visitor_type']); ?> Visit</span>
+                            <span class="badge bg-light text-secondary border font-monospace small">Primary CID: <?php echo htmlspecialchars($item['visitorCid']); ?></span>
+                            <span class="badge bg-primary text-white small" style="background-color: #6366f1 !important;"><?php echo htmlspecialchars($item['visitorType']); ?> Visit</span>
                         </div>
                         
-                        <?php if (!empty($item['inmate_name'])): ?>
+                        <?php if (!empty($item['inmateName'])): ?>
                             <div class="p-3 bg-light rounded-3 my-3 border border-light shadow-sm">
                                 <div class="text-uppercase tracking-wider small fw-bold text-secondary mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Target Inmate Destination</div>
-                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($item['inmate_name']); ?> <span class="text-muted font-normal small">(CID: <?php echo htmlspecialchars($item['inmate_cid']); ?>)</span></div>
+                                <div class="fw-bold text-dark"><?php echo htmlspecialchars($item['inmateName']); ?> <span class="text-muted font-normal small">(CID: <?php echo htmlspecialchars($item['inmateCid']); ?>)</span></div>
                                 <div class="mt-1">
                                     <span class="badge bg-dark small"><?php echo htmlspecialchars($item['block']); ?></span>
                                     <span class="text-secondary small ms-1">Relationship: <strong><?php echo htmlspecialchars($item['relationship']); ?></strong></span>
@@ -92,7 +98,7 @@ if ($searchId) {
                         <!-- Accompanying Roster Grid Rendering -->
                         <h6 class="fw-bold mt-3 text-secondary small text-uppercase" style="letter-spacing: 0.5px;">👥 Group Members Accompanied</h6>
                         <?php 
-                        $accompaniedList = !empty($item['accompanying_data']) ? (is_string($item['accompanying_data']) ? json_decode($item['accompanying_data'], true) : $item['accompanying_data']) : [];
+                        $accompaniedList = !empty($item['accompanyingData']) ? json_decode($item['accompanyingData'], true) : [];
                         if (!empty($accompaniedList) && is_array($accompaniedList)): 
                         ?>
                             <div class="table-responsive mt-2">
@@ -120,10 +126,11 @@ if ($searchId) {
                     <div class="col-12 col-lg-4 p-3 p-md-4 bg-light d-flex flex-column justify-content-between align-items-center text-center border-start">
                         <div class="w-100 d-flex flex-column align-items-center">
                             <div class="text-uppercase tracking-wider small fw-bold text-secondary mb-3" style="font-size: 0.72rem; letter-spacing: 0.5px;">Gate 1 Photo Document Audit</div>
-                            <?php if (!empty($item['cid_photo'])): ?>
+                            <?php if (!empty($item['cidPhoto'])): ?>
                                 <div class="duty-photo-frame mb-3">
-                                    <img src="<?php echo $item['cid_photo']; ?>" class="img-fluid rounded-2" style="max-height: 180px; width: 100%; object-fit: contain; display: block;" alt="CID File">
+                                    <img src="<?php echo $item['cidPhoto']; ?>" class="img-fluid rounded-2" style="max-height: 180px; width: 100%; object-fit: contain; display: block;" alt="CID File">
                                 </div>
+                            </div>
                             <?php else: ?>
                                 <div class="alert alert-secondary small py-4 rounded-3 mb-3 w-100">No verification photo snapshot file uploaded.</div>
                             <?php endif; ?>
