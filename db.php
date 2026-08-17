@@ -1,18 +1,13 @@
 <?php
-// 🚀 DRIVERLESS CLOUD REST DATA EDGE ROUTER PIPELINE FOR SUPABASE
+// 🚀 UNIVERSAL SUPABASE API BRIDGE ENGINE
 define('SUPABASE_URL', 'https://icmjvsxjhqjvzvyyolry.supabase.co');
 
-// 💡 EXTREMELY IMPORTANT: Make sure to replace the placeholder key below 
-// with your actual long public "anon" public key string starting with "eyJhbG..."
+// 💡 PASTE YOUR EXTREMELY LONG PUBLIC ANON KEY HERE (Starts with eyJhbG...)
 define('SUPABASE_KEY', 'sb_secret_18gPROtxsy8GsxIR4lP8og_tF3hN_Dk');
 
-/**
- * Executes a driverless REST API request straight to your Supabase tables.
- */
 function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
     $url = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . $tableName;
     
-    // Append query filter parameters for selective record updates or lookups
     if (!empty($filter)) {
         $queryParams = [];
         foreach ($filter as $key => $val) {
@@ -23,17 +18,16 @@ function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
 
     $ch = curl_init($url);
     
-    // Set standard secure cloud authentication headers required by Supabase
     $headers = [
         'apikey: ' . SUPABASE_KEY,
         'Authorization: Bearer ' . SUPABASE_KEY,
         'Content-Type: application/json',
-        'Prefer: return=representation' // Forces Supabase to return processed rows
+        'Prefer: return=representation'
     ];
 
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Bypasses SSL certificate locks on Render free containers
 
     if ($action === 'INSERT') {
         curl_setopt($ch, CURLOPT_POST, true);
@@ -46,9 +40,16 @@ function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
     }
 
     $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
     $decodedData = json_decode($response, true);
+    
+    // Log failures out loud on the screen to debug immediately if columns are wrong
+    if ($httpCode >= 400) {
+        echo "<div class='alert alert-danger font-monospace small m-3'><strong>Supabase API Error ($httpCode):</strong> " . htmlspecialchars($response) . "</div>";
+    }
+
     return $decodedData ?? [];
 }
 ?>
