@@ -63,9 +63,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $recordId = $db->lastInsertId();
 
-        // 🚀 LIVE BACKUP TRIGGER: Sync your local sqlite data to GitHub files instantly
-        backupDatabaseToGitHub();
-
         $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
         $host = $_SERVER['HTTP_HOST'];
         if (strpos($host, 'render.local') !== false || $host === 'localhost') {
@@ -172,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <div class="p-4 p-md-5 bg-white d-flex flex-column align-items-center justify-content-center text-center">
             <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center small">
-                ✅ Record Registered &amp; GitHub Synced Successfully
+                ✅ Record Registered &amp; Saved Successfully
             </div>
             
             <p class="text-secondary small mb-2 px-1">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your credentials to execute verification logs.</p>
@@ -259,7 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <span>Accompanying Visitors Roster</span>
                 <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
             </div>
-            <div class="text-muted small mb-3">Maximum limit: <strong>6 accompanying passengers</strong>. Entries exceeding 6 will be blocked.</div>
+            <div class="text-muted small mb-3">Maximum limit: <strong>5 Accompanying Visitors</strong>. Entries exceeding 6 will be blocked.</div>
             
             <div id="accompanyingWrapper">
                 <!-- Dynamic rows injected here by JavaScript -->
@@ -301,8 +298,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Dynamic Rows Controller Logic for Accompanying Members
         addAccBtn.addEventListener('click', function() {
             const currentRows = accompanyingWrapper.querySelectorAll('.acc-box').length;
-            if (currentRows >= 6) { 
-                alert("🛑 Structural Limit Enforced: Max 6 rows."); 
+            if (currentRows >= 5) { 
+                alert("🛑 Structural Limit Enforced: Max 5 rows."); 
                 return; 
             }
             const div = document.createElement('div');
