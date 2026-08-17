@@ -139,14 +139,17 @@ $userRole = $_SESSION['role'] ?? '';
         <div class="custom-navbar-link-row">
             <a class="nav-link text-white small m-0 p-0" href="index.php">🏠 Gate 1 Entry</a>
             
-            <?php if ($isLoggedIn): ?>
-                <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
-                    <a class="nav-link text-white small m-0 p-0" href="gate2.php">👮 Gate 2 Desk</a>
-                <?php endif; ?>
-                <?php if ($userRole === 'admin'): ?>
-                    <a class="nav-link text-white small m-0 p-0" href="admin.php">📊 Admin Panel</a>
-                    <a class="nav-link text-warning small fw-bold m-0 p-0" href="manage_ban.php">🚫 Inmate Restrictions</a>
-                <?php endif; ?>
+<?php if ($isLoggedIn): ?>
+    <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
+        <a class="nav-link text-white small m-0 p-0" href="gate2.php">👮 Gate 2 Desk</a>
+    <?php endif; ?>
+    <?php if ($userRole === 'admin'): ?>
+        <a class="nav-link text-white small m-0 p-0" href="admin.php">📊 Admin Panel</a>
+        <!-- Changed text-warning to text-white below -->
+        <a class="nav-link text-white small fw-bold m-0 p-0" href="manage_ban.php">🚫 Inmate Restrictions</a>
+    <?php endif; ?>
+
+
                 <span class="text-secondary small d-none d-md-inline px-1">|</span>
                 <span class="text-light small">Signed in: <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
                 <a class="btn btn-sm btn-outline-danger px-2.5 py-0.5 align-middle" href="logout.php" style="font-size: 0.72rem; border-radius: 6px;">Logout</a>
