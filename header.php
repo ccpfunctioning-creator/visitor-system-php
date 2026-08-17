@@ -132,7 +132,7 @@ $userRole = $_SESSION['role'] ?? '';
     <div class="custom-centered-header-box">
         <!-- Main Application Brand Title Centered with forced clean white text parameters -->
         <a class="navbar-brand text-center mx-auto text-white fw-bold" href="index.php" style="background: none; -webkit-background-clip: unset; -webkit-text-fill-color: initial; color: #ffffff !important;">
-            Visitors Registration System Gateway Panel <p>ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།</p>
+            Visitors Registration System Gateway Panel <p class="text-white m-0">ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།</p>
         </a>
         
         <!-- Navigation Menu Items Centered Row Box -->
@@ -145,16 +145,17 @@ $userRole = $_SESSION['role'] ?? '';
     <?php endif; ?>
     <?php if ($userRole === 'admin'): ?>
         <a class="nav-link text-white small m-0 p-0" href="admin.php">📊 Admin Panel</a>
-        <!-- Changed text-warning to text-white below -->
         <a class="nav-link text-white small fw-bold m-0 p-0" href="manage_ban.php">🚫 Inmate Restrictions</a>
     <?php endif; ?>
 
-
-                <span class="text-secondary small d-none d-md-inline px-1">|</span>
-                <span class="text-light small">Signed in: <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
+                <!-- Changed text-secondary to text-white below -->
+                <span class="text-white small d-none d-md-inline px-1">|</span>
+                <!-- Changed text-light to text-white below -->
+                <span class="text-white small">Signed in: <strong class="text-white"><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
                 <a class="btn btn-sm btn-outline-danger px-2.5 py-0.5 align-middle" href="logout.php" style="font-size: 0.72rem; border-radius: 6px;">Logout</a>
             <?php else: ?>
-                <span class="text-secondary small px-1">|</span>
+                <!-- Changed text-secondary to text-white below -->
+                <span class="text-white small px-1">|</span>
                 <a class="btn btn-sm btn-outline-light px-2.5 py-1 align-middle" href="login.php" style="font-size: 0.72rem; border-radius: 6px;">Internal Staff Sign In</a>
             <?php endif; ?>
         </div>
