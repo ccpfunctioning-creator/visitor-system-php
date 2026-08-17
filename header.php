@@ -132,7 +132,7 @@ $userRole = $_SESSION['role'] ?? '';
     <div class="custom-centered-header-box">
         <!-- Main Application Brand Title Centered with forced clean white text parameters -->
         <a class="navbar-brand text-center mx-auto text-white fw-bold" href="index.php" style="background: none; -webkit-background-clip: unset; -webkit-text-fill-color: initial; color: #ffffff !important;">
-            Visitors Registration System Gateway Panel | ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།
+            Visitors Registration System Gateway Panel <p>ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།</p>
         </a>
         
         <!-- Navigation Menu Items Centered Row Box -->
