@@ -3,7 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Security Enforcement Layer: Restrict access strictly to the Admin Account role
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'admin') {
     header('Location: login.php');
     exit;
@@ -14,24 +13,19 @@ require_once 'db.php';
 $searchQuery = trim($_GET['search'] ?? '');
 $filterType = $_GET['filter_type'] ?? 'all';
 
-// Fetch data from cloud table index cluster
 $filterParams = [];
 if (!empty($searchQuery)) {
-    // Exact structural equality filters for Supabase REST API metrics
     $filterParams['visitor_cid'] = 'eq.' . $searchQuery;
 }
 
-// Fetch visitor transaction lists from your active Supabase workspace
 $allVisitors = querySupabaseCloud('visitors', 'SELECT', [], $filterParams);
 
-// Apply type category filters via PHP array logic arrays if selected
 if ($filterType !== 'all' && is_array($allVisitors)) {
     $allVisitors = array_filter($allVisitors, function($item) use ($filterType) {
         return isset($item['status']) && $item['status'] === $filterType;
     });
 }
 
-// Calculate summary totals cleanly for display blocks
 $totalRecords = is_array($allVisitors) ? count($allVisitors) : 0;
 $pendingCount = 0;
 $checkedInCount = 0;
@@ -56,7 +50,6 @@ if (is_array($allVisitors)) {
     </div>
     
     <div class="p-3 p-md-4">
-        <!-- Dashboard Statistics Counters Summary Row Wrapper Maps -->
         <div class="row g-3 mb-4 text-center">
             <div class="col-6 col-md-3">
                 <div class="p-3 bg-light border rounded-3">
@@ -84,7 +77,6 @@ if (is_array($allVisitors)) {
             </div>
         </div>
 
-        <!-- Filter Controls Filter Console Bar -->
         <form method="GET" action="admin.php" class="row g-2 mb-4 align-items-end">
             <div class="col-12 col-md-5">
                 <label class="form-label custom-label-style">Search Visitor CID Token</label>
@@ -106,7 +98,6 @@ if (is_array($allVisitors)) {
             </div>
         </form>
 
-        <!-- Transaction Logging Data Table Workspace Interface -->
         <div class="table-responsive border rounded-3 shadow-sm bg-white">
             <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
                 <thead class="table-dark" style="background-color: #0f172a !important; color: white;">
@@ -126,10 +117,23 @@ if (is_array($allVisitors)) {
                         </tr>
                     <?php else: ?>
                         <?php foreach ($allVisitors as $row): ?>
+                            <?php
+                                // 💡 Dynamic link format parser for Admin view
+                                $adminPhotoUrl = 'https://placehold.co';
+                                if (!empty($row['cid_photo'])) {
+                                    $rawAdminPath = $row['cid_photo'];
+                                    if (strpos($rawAdminPath, 'uploads/') !== false) {
+                                        $cleanAdminPath = substr($rawAdminPath, strpos($rawAdminPath, 'uploads/'));
+                                        $adminPhotoUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $cleanAdminPath;
+                                    } else {
+                                        $adminPhotoUrl = str_replace('http://', 'https://', $rawAdminPath);
+                                    }
+                                }
+                            ?>
                             <tr>
                                 <td class="p-3">
                                     <div class="border rounded bg-light overflow-hidden shadow-sm" style="width: 55px; height: 65px;">
-                                        <img src="<?php echo htmlspecialchars($row['cid_photo'] ?? 'https://placehold.co'); ?>" class="w-100 h-100" style="object-fit: cover;">
+                                        <img src="<?php echo htmlspecialchars($adminPhotoUrl); ?>" class="w-100 h-100" style="object-fit: cover;">
                                     </div>
                                 </td>
                                 <td class="p-3">
@@ -162,7 +166,7 @@ if (is_array($allVisitors)) {
         </div>
     </div>
 </div>
-</div> <!-- Closing the master content limiter block -->
-</div> <!-- Closing the master center viewport wrapper block -->
+</div>
+</div>
 </body>
 </html>
