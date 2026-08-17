@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'count' => count($accompanyingList)
         ];
     }
-
+}
 ?>
 
 <?php include 'header.php'; ?>
