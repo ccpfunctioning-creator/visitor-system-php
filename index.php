@@ -192,7 +192,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="file" name="cidPhoto" class="form-control custom-input-style" accept="image/*" required>
                 </div>
             </div>
+             <!-- Official Visitor Declaration -->
+            <div class="section-divider-title">Official Visitor Declaration</div>
+            <div class="section-container bg-light border p-3 rounded-3 mb-4">
+                <div class="form-check d-flex align-items-start gap-2 m-0 text-start">
+                    <input class="form-check-input custom-input-style flex-shrink-0" type="checkbox" id="declarationCheck" name="declaration_check" style="width: 20px; height: 20px; margin-top: 0.15rem;" required>
+                    <label class="form-check-label text-secondary small fw-medium" for="declarationCheck" style="user-select: none; line-height: 1.4;">
+                        I hereby declare that the information given in this form is true and correct to the best of my knowledge. In case if any information is found to be false, I shall be liable for disciplinary action as per the Prison Act of Bhutan 2004 and Penal Code of Bhutan 2004.
+                        <p>གོང་གསལ་ཞུ་ཡོད་པའི་ མི་ཁུངས་གི་ཁ་གསལ་ཚུ་ བདེན་པ་མེན་པ་ བརྫུན་ཞུགས་ཐོག་ཞུ་བ་ཡིན་ཚེ་ འབྲུག་གི་ཉེས་འགེལ་ཁྲིམས་དེབ་ ༢༠༠༤ ཅན་མའི་དགོངས་དོན་ལྟར་ བརྫུན་ཞུགས་གནས་ཚུལ་གྱི་ཉེས་ཁྲིམས་ཕྱགས་ཕྱིད་ཞུ་ནི་ཁས་ལེན།</p>
 
+                    </label>
+                </div>
+            </div>
             <!-- Action Controls Form Submission Panel -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <a href="index.php" class="btn btn-light px-4 py-2 fw-semibold border rounded-3" style="color: #475569;">Reset</a>
