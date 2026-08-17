@@ -112,10 +112,7 @@ $userRole = $_SESSION['role'] ?? '';
 <body>
 <nav class="navbar navbar-expand-md navbar-dark p-3">
     <div class="container-fluid px-md-4">
-       
-        <nav class="navbar-container">
-          <a class="navbar-brand" href="index.php">VRS Gateway Panel | ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།</a>
-        </nav>
+        <a class="navbar-brand" href="index.php">VRS Gateway Panel | ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#vrsNavbar" aria-controls="vrsNavbar" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
