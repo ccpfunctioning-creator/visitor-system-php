@@ -1,5 +1,4 @@
 <?php
-// Initialize session cleanly at the absolute top of the stack
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -19,7 +18,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $block = ($visitorType === 'Others') ? null : ($_POST['block'] ?? '');
     $relationship = ($visitorType === 'Others') ? null : ($_POST['relationship'] ?? '');
 
-    // Process and validate Accompanying Visitors Array
     $accNames = $_POST['accName'] ?? [];
     $accCids = $_POST['accCid'] ?? [];
     $accRelations = $_POST['accRelation'] ?? [];
@@ -39,59 +37,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorMessage = "❌ Registration Rejected: You cannot have more than 6 accompanying visitors per application.";
     }
 
-    // Check ban list in Supabase Cloud
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
-        $banCheck = querySupabaseCloud("banned_inmates?inmate_cid=eq." . urlencode($inmateCid), "GET");
-        if (is_array($banCheck) && !empty($banCheck)) {
+        // Query cloud restrictions index over direct API pipeline
+        $banCheck = querySupabaseCloud('banned_inmates', 'SELECT', [], ['inmate_cid' => 'eq.' . $inmateCid]);
+        if (!empty($banCheck)) {
             $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
         }
     }
 
-    // Process file upload safely using image base64 inline encoding parameters
-    $photoEncodedString = '';
+    $photoPath = '';
     if (!$errorMessage && isset($_FILES['cidPhoto']) && $_FILES['cidPhoto']['error'] === 0) {
-        $fileType = $_FILES['cidPhoto']['type'];
-        $photoEncodedString = 'data:' . $fileType . ';base64,' . base64_encode(file_get_contents($_FILES['cidPhoto']['tmp_name']));
+        $targetDir = "uploads/";
+        if (!file_exists($targetDir)) { mkdir($targetDir, 0777, true); }
+        $fileName = "CID-" . time() . "_" . basename($_FILES['cidPhoto']['name']);
+        $targetFilePath = $targetDir . $fileName;
+        
+        if (move_uploaded_file($_FILES['cidPhoto']['tmp_name'], $targetFilePath)) {
+            // Supply explicit full network routing context path
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+            $photoPath = $protocol . $_SERVER['HTTP_HOST'] . '/' . $targetFilePath;
+        } else {
+            $errorMessage = "⚠️ Failed to process and upload your identification document snapshot.";
+        }
     }
 
     if (!$errorMessage) {
         $documentPayload = [
-            'inmate_name' => $inmateName,
-            'inmate_cid' => $inmateCid,
-            'block' => $block,
-            'visitor_name' => $visitorName,
-            'visitor_cid' => $visitorCid,
-            'relationship' => $relationship,
-            'visitor_type' => $visitorType,
-            'cid_photo' => $photoEncodedString,
-            'accompanying_data' => $accompanyingList,
-            'status' => 'Pending'
+            'inmate_name'       => $inmateName,
+            'inmate_cid'        => $inmateCid,
+            'block'             => $block,
+            'visitor_name'      => $visitorName,
+            'visitor_cid'       => $visitorCid,
+            'relationship'      => $relationship,
+            'visitor_type'      => $visitorType,
+            'cid_photo'         => $photoPath,
+            'accompanying_data' => !empty($accompanyingList) ? json_encode($accompanyingList) : null,
+            'status'            => 'Pending'
         ];
 
-        // Direct Cloud Insertion Operation!
-        $insertedRecord = querySupabaseCloud("visitors", "POST", $documentPayload);
-        $recordId = $insertedRecord['id'] ?? null;
-        
-        if (empty($recordId)) {
-            $errorMessage = "❌ Cloud Connection Fault: Please verify that your full Supabase API key inside db.php is valid.";
-        } else {
-            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-            $host = $_SERVER['HTTP_HOST'];
-            if (strpos($host, 'render.local') !== false || $host === 'localhost') {
-                $host = '://onrender.com'; 
-            }
-            
-            $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $recordId;
+        // Process insertion request into cloud table cluster index
+        querySupabaseCloud('visitors', 'INSERT', $documentPayload);
 
-            $successData = [
-                'name' => $visitorName, 
-                'cid' => $visitorCid, 
-                'type' => $visitorType,
-                'photo' => $photoEncodedString,
-                'count' => count($accompanyingList),
-                'url' => $verificationUrl
-            ];
-        }
+        $successData = [
+            'name' => $visitorName, 
+            'cid' => $visitorCid, 
+            'type' => $visitorType,
+            'photo' => $photoPath,
+            'count' => count($accompanyingList)
+        ];
     }
 }
 ?>
@@ -106,38 +99,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         max-width: 100%; width: 260px; text-align: center;
     }
     .acc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; position: relative; }
-    .form-card-container { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03); border: 1px solid #f1f5f9; padding: 2rem; }
+    .form-card-container { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03); border: 1px solid #f1f5f9; padding: 2rem; width: 100%; }
     .custom-label-style { font-weight: 600; color: #334155; font-size: 0.9rem; margin-bottom: 0.4rem; }
     .custom-input-style { border-radius: 10px !important; padding: 0.6rem 1rem; border: 1px solid #cbd5e1; transition: all 0.2s ease; }
+    .custom-input-style:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
     .section-divider-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; font-weight: 700; margin: 2rem 0 1.25rem 0; display: flex; align-items: center; gap: 0.5rem; }
     .section-divider-title::after { content: ''; flex-grow: 1; height: 1px; background: #e2e8f0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
-<div class="container py-3 py-md-5">
+<div class="container d-flex justify-content-center align-items-center w-100">
 <?php if ($successData): ?>
     <div class="beautiful-card mx-auto my-2 animate-fade-in shadow-lg" style="max-width: 520px;">
         <div class="card-header-gradient text-center py-4"><h4 class="m-0 fw-bold" style="color: white;">✨ Access Token Generated</h4></div>
         <div class="p-4 p-md-5 bg-white d-flex flex-column align-items-center justify-content-center text-center">
-            <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center small">✅ Record Registered &amp; Cloud Saved Successfully</div>
-            <p class="text-secondary small mb-2 px-1">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to execute verification logs.</p>
-            <div class="image-preview-frame"><img src="<?php echo $successData['photo']; ?>" class="img-fluid rounded-3 mx-auto" style="max-height: 220px; width: auto; object-fit: contain; display: block;" alt="Uploaded Photo"></div>
+            <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center small">✅ Record Registered &amp; Cloud Synced Successfully</div>
+            <p class="text-secondary small mb-2 px-1">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your credentials to execute verification logs.</p>
+            <div class="image-preview-frame"><img src="<?php echo htmlspecialchars($successData['photo']); ?>" class="img-fluid rounded-3 mx-auto" style="max-height: 220px; width: auto; object-fit: contain; display: block;" alt="Uploaded Photo"></div>
             <h3 class="fw-bold mb-1 text-dark mt-2"><?php echo htmlspecialchars($successData['name']); ?></h3>
             <div class="d-flex gap-2 justify-content-center align-items-center mb-3">
                 <span class="badge bg-light text-secondary border px-2 py-1.5 small font-monospace">CID: <?php echo htmlspecialchars($successData['cid']); ?></span>
                 <span class="badge bg-primary px-2 py-1.5 text-white small" style="background-color: #6366f1;"><?php echo $successData['type']; ?> Visit</span>
             </div>
+            <?php if ($successData['count'] > 0): ?><div class="mb-4"><span class="badge bg-dark px-3 py-1.5 rounded-pill">👥 Accompanying Visitors Count: <?php echo $successData['count']; ?></span></div><?php endif; ?>
             <hr class="w-100 text-muted my-2">
             <div class="w-100"><a href="index.php" class="btn btn-gradient py-2.5 fw-bold text-white shadow w-100" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none; border-radius: 12px; font-size: 0.95rem;">🔄 Register Another Visitor</a></div>
         </div>
     </div>
 <?php else: ?>
-    <div class="form-card-container mx-auto animate-fade-in" style="max-width: 850px;">
+    <div class="form-card-container mx-auto animate-fade-in">
         <form action="index.php" method="POST" enctype="multipart/form-data">
-            <?php if ($errorMessage): ?><div class="alert alert-danger p-3 mb-4 rounded-3 small fw-semibold"><?php echo $errorMessage; ?></div><?php endif; ?>
-
             <div class="row mb-4">
-                <div class="col-12 col-md-6">
+                <div class="col-12">
                     <label class="form-label custom-label-style">Visitor Classification</label>
                     <select name="visitorType" id="visitorType" class="form-select custom-input-style" required>
                         <option value="Personal">👪 Personal Visit</option><option value="Official">💼 Official Business</option>
@@ -167,6 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
+            <!-- Accompanying Visitors Section -->
             <div class="section-divider-title d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span>Accompanying Visitors Roster</span>
                 <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
@@ -174,6 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="text-muted small mb-3">Maximum limit: <strong>6 accompanying passengers</strong>.</div>
             <div id="accompanyingWrapper"></div>
 
+            <!-- Primary Visitor Profile Section -->
             <div class="section-divider-title">Primary Visitor Identity Profile</div>
             <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
                 <div>
@@ -190,6 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
+            <!-- Action Form Submission Controls -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <a href="index.php" class="btn btn-light px-4 py-2 fw-semibold border rounded-3" style="color: #475569;">Reset</a>
                 <button type="submit" id="submitBtn" class="btn text-white px-4 py-2 fw-bold rounded-3 shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">Verify Credentials &amp; Issue Pass</button>
@@ -203,9 +199,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const addAccBtn = document.getElementById('addAccBtn');
         const accompanyingWrapper = document.getElementById('accompanyingWrapper');
 
+        // Dynamic Accompanying Form Row Factory Instance Loader
         addAccBtn.addEventListener('click', function() {
             const currentRows = accompanyingWrapper.querySelectorAll('.acc-box').length;
-            if (currentRows >= 6) { alert("🛑 Structural Limit Enforced: Max 6 rows."); return; }
+            if (currentRows >= 6) { 
+                alert("🛑 Structural Limit Enforced: You cannot add more than 6 accompanying passengers."); 
+                return; 
+            }
             const div = document.createElement('div');
             div.className = 'acc-box animate-fade-in';
             div.innerHTML = `
@@ -219,7 +219,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             accompanyingWrapper.appendChild(div);
         });
 
-        accompanyingWrapper.addEventListener('click', function(e) { if (e.target.classList.contains('remove-acc-btn')) e.target.closest('.acc-box').remove(); });
+        // Event Delegator to Remove Accompanying Grid Row Boxes Dynamic
+        accompanyingWrapper.addEventListener('click', function(e) { 
+            if (e.target.classList.contains('remove-acc-btn')) {
+                e.target.closest('.acc-box').remove(); 
+            }
+        });
+
+        // Dynamic Layout Conditional Form Fields Toggler
         typeSelect.addEventListener('change', function() {
             if(this.value === 'Others') {
                 inmateSection.style.display = 'none';
