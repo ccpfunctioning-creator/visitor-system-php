@@ -130,8 +130,8 @@ $userRole = $_SESSION['role'] ?? '';
 <nav class="navbar navbar-dark p-3">
     <div class="custom-centered-header-box">
         <!-- Main Application Brand Title Centered -->
-        <a class="navbar-brand text-center mx-auto" href="index.php">VRS Gateway Panel |  ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས། </a>
-        
+        <a class="navbar-brand text-center mx-auto text-white" href="index.php">VRS Gateway Panel |  ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས། </a>
+    
         <!-- Navigation Menu Items Centered Row Box -->
         <div class="custom-navbar-link-row">
             <a class="nav-link text-white small m-0 p-0" href="index.php">🏠 Gate 1 Entry</a>
