@@ -127,11 +127,14 @@ $userRole = $_SESSION['role'] ?? '';
 </head>
 <body>
 <!-- 🚀 REBUILT CENTER BLOCK NAVIGATION CONTAINER BAR -->
+<!-- 🚀 REBUILT CENTER BLOCK NAVIGATION CONTAINER BAR -->
 <nav class="navbar navbar-dark p-3">
     <div class="custom-centered-header-box">
-        <!-- Main Application Brand Title Centered -->
-        <a class="navbar-brand text-center mx-auto text-white" href="index.php">VRS Gateway Panel |  ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས། </a>
-    
+        <!-- Main Application Brand Title Centered with forced clean white text parameters -->
+        <a class="navbar-brand text-center mx-auto text-white fw-bold" href="index.php" style="background: none; -webkit-background-clip: unset; -webkit-text-fill-color: initial; color: #ffffff !important;">
+            Visitors Registration System Gateway Panel | ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།
+        </a>
+        
         <!-- Navigation Menu Items Centered Row Box -->
         <div class="custom-navbar-link-row">
             <a class="nav-link text-white small m-0 p-0" href="index.php">🏠 Gate 1 Entry</a>
@@ -154,6 +157,7 @@ $userRole = $_SESSION['role'] ?? '';
         </div>
     </div>
 </nav>
+
 
 <!-- AUTOMATED MASTER WRAPPER OPENING TAG: Centers any page layout parameters next -->
 <div class="master-viewport-center-wrapper">
