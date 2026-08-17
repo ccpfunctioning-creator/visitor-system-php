@@ -93,7 +93,7 @@ $userRole = $_SESSION['role'] ?? '';
             box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
             color: white;
         }
-        /* 🚀 UNIFORM DESKTOP GRID CENTERING WRAPPER */
+        /* MASTER RESPONSIVE VIEWPORTS CENTERING GRID UTILITY */
         .master-viewport-center-wrapper {
             flex-grow: 1;
             display: flex;
@@ -104,41 +104,38 @@ $userRole = $_SESSION['role'] ?? '';
         }
         .master-content-limiter {
             width: 100%;
-            /* ⚡ REDUCED FROM 950px TO STANDARD CARD COMPACT WIDTH */
             max-width: 640px; 
         }
     </style>
 </head>
 <body>
 <nav class="navbar navbar-expand-md navbar-dark p-3">
-    <div class="container-fluid px-md-4">
-        <a class="navbar-brand" href="index.php">VRS Gateway Panel | ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས།</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#vrsNavbar" aria-controls="vrsNavbar" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
+    <!-- 🚀 FIXED INNER WRAPPER: Forced center alignment via Bootstrap Flex utilities -->
+    <div class="container-fluid d-flex flex-column align-items-center justify-content-center text-center gap-2">
+        <a class="navbar-brand m-0" href="index.php">VRS Gateway Panel |  ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས། </a>
         
-        <div class="collapse navbar-collapse" id="vrsNavbar">
-            <div class="navbar-nav ms-auto gap-2 align-items-md-center mt-3 mt-md-0">
-                <a class="nav-link text-white small" href="index.php">🏠 Gate 1 Entry</a>
-                
-                <?php if ($isLoggedIn): ?>
-                    <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
-                        <a class="nav-link text-white small" href="gate2.php">👮 Gate 2 Desk</a>
-                    <?php endif; ?>
-                    <?php if ($userRole === 'admin'): ?>
-                        <a class="nav-link text-white small" href="admin.php">📊 Admin Panel</a>
-                        <a class="nav-link text-warning small fw-bold" href="manage_ban.php">🚫 Inmate Restrictions</a>
-                    <?php endif; ?>
-                    <span class="navbar-text text-secondary mx-md-2 small d-none d-md-inline">|</span>
-                    <span class="navbar-text text-light small mb-2 mb-md-0">Signed in: <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
-                    <a class="btn btn-sm btn-outline-danger px-3 py-1.5" href="logout.php">Logout</a>
-                <?php else: ?>
-                    <a class="btn btn-sm btn-outline-light px-3 py-1.5" href="login.php">Internal Staff Sign In</a>
+        <div class="d-flex align-items-center justify-content-center flex-wrap gap-3">
+            <!-- Navigation Links -->
+            <a class="nav-link text-white small" href="index.php">🏠 Gate 1 Entry</a>
+            
+            <?php if ($isLoggedIn): ?>
+                <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
+                    <a class="nav-link text-white small" href="gate2.php">👮 Gate 2 Desk</a>
                 <?php endif; ?>
-            </div>
+                <?php if ($userRole === 'admin'): ?>
+                    <a class="nav-link text-white small" href="admin.php">📊 Admin Panel</a>
+                    <a class="nav-link text-warning small fw-bold" href="manage_ban.php">🚫 Inmate Restrictions</a>
+                <?php endif; ?>
+                <span class="text-secondary small d-none d-md-inline">|</span>
+                <span class="text-light small">Signed in: <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
+                <a class="btn btn-sm btn-outline-danger px-3 py-1 text-xs" href="logout.php" style="font-size: 0.75rem;">Logout</a>
+            <?php else: ?>
+                <a class="btn btn-sm btn-outline-light px-3 py-1 text-xs" href="login.php" style="font-size: 0.75rem;">Internal Staff Sign In</a>
+            <?php endif; ?>
         </div>
     </div>
 </nav>
 
+<!-- AUTOMATED MASTER WRAPPER OPENING TAG: Centers page layouts executing below -->
 <div class="master-viewport-center-wrapper">
     <div class="master-content-limiter">
