@@ -60,28 +60,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errorMessage) {
-        // Universal dual-named map container payload to guarantee compatibility with both snake_case and camelCase database structures
+        // Strict snake_case mapping payload to align with your Supabase schema cache parameters
         $documentPayload = [
             'inmate_name'       => $inmateName,
-            'inmateName'        => $inmateName,
             'inmate_cid'        => $inmateCid,
-            'inmateCid'         => $inmateCid,
             'block'             => $block,
             'visitor_name'      => $visitorName,
-            'visitorName'       => $visitorName,
             'visitor_cid'       => $visitorCid,
-            'visitorCid'        => $visitorCid,
             'relationship'      => $relationship,
             'visitor_type'      => $visitorType,
-            'visitorType'       => $visitorType,
             'cid_photo'         => $photoPath,
-            'cidPhoto'          => $photoPath,
             'accompanying_data' => !empty($accompanyingList) ? json_encode($accompanyingList) : null,
-            'accompanyingData'  => !empty($accompanyingList) ? json_encode($accompanyingList) : null,
             'status'            => 'Pending'
         ];
 
-        // Fire transaction to the database
+        // Process insertion request into cloud table cluster index safely
         querySupabaseCloud('visitors', 'INSERT', $documentPayload);
 
         // Force generate the pass token block instantly to prevent network drop hangs
@@ -93,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'count' => count($accompanyingList)
         ];
     }
-}
+
 ?>
 
 <?php include 'header.php'; ?>
