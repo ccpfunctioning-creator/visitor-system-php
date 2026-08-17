@@ -136,29 +136,29 @@ $userRole = $_SESSION['role'] ?? '';
         </a>
         
         <!-- Navigation Menu Items Centered Row Box -->
+                <!-- Navigation Menu Items Centered Row Box -->
         <div class="custom-navbar-link-row">
-            <a class="nav-link text-white small m-0 p-0" href="index.php">🏠 Gate 1 Entry</a>
+            <!-- 🏠 Gate 1 Entry Link with Forced White Color -->
+            <a class="nav-link text-white small m-0 p-0" href="index.php" style="color: #ffffff !important;">🏠 Gate 1 Entry</a>
             
-<?php if ($isLoggedIn): ?>
-    <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
-        <a class="nav-link text-white small m-0 p-0" href="gate2.php">👮 Gate 2 Desk</a>
-    <?php endif; ?>
-    <?php if ($userRole === 'admin'): ?>
-        <a class="nav-link text-white small m-0 p-0" href="admin.php">📊 Admin Panel</a>
-        <a class="nav-link text-white small fw-bold m-0 p-0" href="manage_ban.php">🚫 Inmate Restrictions</a>
-    <?php endif; ?>
-
-                <!-- Changed text-secondary to text-white below -->
-                <span class="text-white small d-none d-md-inline px-1">|</span>
-                <!-- Changed text-light to text-white below -->
-                <span class="text-white small">Signed in: <strong class="text-white"><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
+            <?php if ($isLoggedIn): ?>
+                <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
+                    <a class="nav-link text-white small m-0 p-0" href="gate2.php" style="color: #ffffff !important;">👮 Gate 2 Desk</a>
+                <?php endif; ?>
+                <?php if ($userRole === 'admin'): ?>
+                    <a class="nav-link text-white small m-0 p-0" href="admin.php" style="color: #ffffff !important;">📊 Admin Panel</a>
+                    <a class="nav-link text-warning small fw-bold m-0 p-0" href="manage_ban.php">🚫 Inmate Restrictions</a>
+                <?php endif; ?>
+                <span class="text-secondary small d-none d-md-inline px-1">|</span>
+                <span class="text-light small">Signed in: <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
                 <a class="btn btn-sm btn-outline-danger px-2.5 py-0.5 align-middle" href="logout.php" style="font-size: 0.72rem; border-radius: 6px;">Logout</a>
             <?php else: ?>
-                <!-- Changed text-secondary to text-white below -->
-                <span class="text-white small px-1">|</span>
-                <a class="btn btn-sm btn-outline-light px-2.5 py-1 align-middle" href="login.php" style="font-size: 0.72rem; border-radius: 6px;">Internal Staff Sign In</a>
+                <span class="text-secondary small px-1">|</span>
+                <!-- 🔑 Staff Sign In Link with Forced White Color -->
+                <a class="btn btn-sm btn-outline-light px-2.5 py-1 align-middle text-white" href="login.php" style="font-size: 0.72rem; border-radius: 6px; color: #ffffff !important; border-color: rgba(255,255,255,0.4);">Internal Staff Sign In</a>
             <?php endif; ?>
         </div>
+
     </div>
 </nav>
 
