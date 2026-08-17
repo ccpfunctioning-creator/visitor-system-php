@@ -40,14 +40,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errorMessage = "❌ Registration Rejected: You cannot have more than 6 accompanying visitors per application.";
     }
 
-    // Fixed secure cloud check: Prevents false restriction blocks on empty query responses
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
-        $banCheck = querySupabaseCloud("banned_inmates?inmate_cid=eq." . urlencode($inmateCid), "GET");
-        if (is_array($banCheck) && !empty($banCheck)) {
-            $checkObj = isset($banCheck[0]) ? $banCheck[0] : $banCheck;
-            if (isset($checkObj['inmate_cid'])) {
-                $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
-            }
+        $checkBan = $db->prepare("SELECT COUNT(*) FROM banned_inmates WHERE inmateCid = ?");
+        $checkBan->execute([$inmateCid]);
+        if ($checkBan->fetchColumn() > 0) {
+            $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
         }
     }
 
@@ -59,52 +56,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errorMessage) {
-        $documentPayload = [
-            'inmate_name' => $inmateName,
-            'inmate_cid' => $inmateCid,
-            'block' => $block,
-            'visitor_name' => $visitorName,
-            'visitor_cid' => $visitorCid,
-            'relationship' => $relationship,
-            'visitor_type' => $visitorType,
-            'cid_photo' => $photoEncodedString,
-            'accompanying_data' => $accompanyingList,
-            'status' => 'Pending'
+        $flatAccompanyingText = !empty($accompanyingList) ? json_encode($accompanyingList) : null;
+
+        $stmt = $db->prepare("INSERT INTO visitors (inmateName, inmateCid, block, visitorName, visitorCid, relationship, visitorType, cidPhoto, accompanyingData) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$inmateName, $inmateCid, $block, $visitorName, $visitorCid, $relationship, $visitorType, $photoEncodedString, $flatAccompanyingText]);
+        
+        $recordId = $db->lastInsertId();
+
+        // 🚀 LIVE BACKUP TRIGGER: Sync your local sqlite data to GitHub files instantly
+        backupDatabaseToGitHub();
+
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+        $host = $_SERVER['HTTP_HOST'];
+        if (strpos($host, 'render.local') !== false || $host === 'localhost') {
+            $host = '://onrender.com'; 
+        }
+        
+        $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $recordId;
+
+        $successData = [
+            'name' => $visitorName, 
+            'cid' => $visitorCid, 
+            'type' => $visitorType,
+            'photo' => $photoEncodedString,
+            'count' => count($accompanyingList),
+            'url' => $verificationUrl
         ];
-
-        // Direct Cloud Insertion Operation!
-        $insertedRecord = querySupabaseCloud("visitors", "POST", $documentPayload);
-        
-        // Extract the unique row database ID key index natively from un-wrapped array envelope
-        $recordId = null;
-        if (is_array($insertedRecord) && !empty($insertedRecord)) {
-            if (isset($insertedRecord[0]['id'])) {
-                $recordId = $insertedRecord[0]['id'];
-            } elseif (isset($insertedRecord['id'])) {
-                $recordId = $insertedRecord['id'];
-            }
-        }
-        
-        if (empty($recordId)) {
-            $errorMessage = "❌ Cloud Connection Fault: Please verify your Supabase endpoint routing definitions.";
-        } else {
-            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-            $host = $_SERVER['HTTP_HOST'];
-            if (strpos($host, 'render.local') !== false || $host === 'localhost') {
-                $host = '://onrender.com'; 
-            }
-            
-            $verificationUrl = $protocol . $host . "/gate2.php?searchId=" . $recordId;
-
-            $successData = [
-                'name' => $visitorName, 
-                'cid' => $visitorCid, 
-                'type' => $visitorType,
-                'photo' => $photoEncodedString,
-                'count' => count($accompanyingList),
-                'url' => $verificationUrl
-            ];
-        }
     }
 }
 ?>
@@ -195,13 +172,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <div class="p-4 p-md-5 bg-white d-flex flex-column align-items-center justify-content-center text-center">
             <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center small">
-                ✅ Record Registered &amp; Cloud Saved Successfully
+                ✅ Record Registered &amp; GitHub Synced Successfully
             </div>
             
             <p class="text-secondary small mb-2 px-1">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your credentials to execute verification logs.</p>
             
             <div class="image-preview-frame">
-                <img src="<?php echo htmlspecialchars($successData['photo']); ?>" class="img-fluid rounded-3 mx-auto" style="max-height: 220px; width: auto; object-fit: contain; display: block;" alt="Uploaded Photo">
+                <img src="<?php echo $successData['photo']; ?>" class="img-fluid rounded-3 mx-auto" style="max-height: 220px; width: auto; object-fit: contain; display: block;" alt="Uploaded Photo">
             </div>
             
             <h3 class="fw-bold mb-1 text-dark mt-2"><?php echo htmlspecialchars($successData['name']); ?></h3>
@@ -277,6 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
+            <!-- Accompanying Visitors Section -->
             <div class="section-divider-title d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span>Accompanying Visitors Roster</span>
                 <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
@@ -287,6 +265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Dynamic rows injected here by JavaScript -->
             </div>
 
+            <!-- Primary Visitor Profile Section -->
             <div class="section-divider-title">Primary Visitor Identity Profile</div>
             <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
                 <div>
@@ -303,6 +282,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
+            <!-- Form Control Actions Sized Symmetrically into Bottom Corner -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <a href="index.php" class="btn btn-light px-4 py-2 fw-semibold border rounded-3" style="color: #475569;">Reset</a>
                 <button type="submit" id="submitBtn" class="btn text-white px-4 py-2 fw-bold rounded-3 shadow d-flex align-items-center gap-2" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">
@@ -318,14 +298,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const addAccBtn = document.getElementById('addAccBtn');
         const accompanyingWrapper = document.getElementById('accompanyingWrapper');
 
-        // Dynamic Rows Controller Logic
+        // Dynamic Rows Controller Logic for Accompanying Members
         addAccBtn.addEventListener('click', function() {
             const currentRows = accompanyingWrapper.querySelectorAll('.acc-box').length;
-            if (currentRows >= 6) {
-                alert("🛑 Structural Limit Enforced: You cannot add more than 6 accompanying rows.");
-                return;
+            if (currentRows >= 6) { 
+                alert("🛑 Structural Limit Enforced: Max 6 rows."); 
+                return; 
             }
-
             const div = document.createElement('div');
             div.className = 'acc-box animate-fade-in';
             div.innerHTML = `
@@ -339,9 +318,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             accompanyingWrapper.appendChild(div);
         });
 
-        accompanyingWrapper.addEventListener('click', function(e) {
+        accompanyingWrapper.addEventListener('click', function(e) { 
             if (e.target.classList.contains('remove-acc-btn')) {
-                e.target.closest('.acc-box').remove();
+                e.target.closest('.acc-box').remove(); 
             }
         });
 
@@ -351,8 +330,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 inmateSection.querySelectorAll('input, select').forEach(el => { el.removeAttribute('required'); el.value = ''; });
             } else {
                 inmateSection.style.display = 'block';
-                inmateSection.querySelectorAll('input, select').forEach(el => {
-                    if (el.id !== 'inmateCid') el.setAttribute('required', 'true');
+                inmateSection.querySelectorAll('input, select').forEach(el => { 
+                    if (el.id !== 'inmateCid') el.setAttribute('required', 'true'); 
                 });
             }
         });
