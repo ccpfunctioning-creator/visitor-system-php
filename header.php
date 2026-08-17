@@ -40,6 +40,8 @@ $userRole = $_SESSION['role'] ?? '';
             background: linear-gradient(to right, #a78bfa, #c084fc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            font-size: 1.4rem;
+            display: inline-block;
         }
         .beautiful-card {
             background: var(--glass-bg);
@@ -106,36 +108,53 @@ $userRole = $_SESSION['role'] ?? '';
             width: 100%;
             max-width: 640px; 
         }
+        /* Strict clean navigation text-centering inline overrides */
+        .custom-centered-header-box {
+            width: 100%;
+            max-width: 640px;
+            margin: 0 auto !important;
+            text-align: center !important;
+        }
+        .custom-navbar-link-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.4rem;
+        }
     </style>
 </head>
 <body>
-<nav class="navbar navbar-expand-md navbar-dark p-3">
-    <!-- 🚀 FIXED INNER WRAPPER: Forced center alignment via Bootstrap Flex utilities -->
-    <div class="container-fluid d-flex flex-column align-items-center justify-content-center text-center gap-2">
-        <a class="navbar-brand m-0" href="index.php">VRS Gateway Panel |  ཁྲིམས་པ་འཕྱད་པིའི་ཐོ་བཀོད་རིམ་ལུགས། </a>
+<!-- 🚀 REBUILT CENTER BLOCK NAVIGATION CONTAINER BAR -->
+<nav class="navbar navbar-dark p-3">
+    <div class="custom-centered-header-box">
+        <!-- Main Application Brand Title Centered -->
+        <a class="navbar-brand text-center mx-auto" href="index.php">VRS Gateway Panel</a>
         
-        <div class="d-flex align-items-center justify-content-center flex-wrap gap-3">
-            <!-- Navigation Links -->
-            <a class="nav-link text-white small" href="index.php">🏠 Gate 1 Entry</a>
+        <!-- Navigation Menu Items Centered Row Box -->
+        <div class="custom-navbar-link-row">
+            <a class="nav-link text-white small m-0 p-0" href="index.php">🏠 Gate 1 Entry</a>
             
             <?php if ($isLoggedIn): ?>
                 <?php if ($userRole === 'gate2' || $userRole === 'admin'): ?>
-                    <a class="nav-link text-white small" href="gate2.php">👮 Gate 2 Desk</a>
+                    <a class="nav-link text-white small m-0 p-0" href="gate2.php">👮 Gate 2 Desk</a>
                 <?php endif; ?>
                 <?php if ($userRole === 'admin'): ?>
-                    <a class="nav-link text-white small" href="admin.php">📊 Admin Panel</a>
-                    <a class="nav-link text-warning small fw-bold" href="manage_ban.php">🚫 Inmate Restrictions</a>
+                    <a class="nav-link text-white small m-0 p-0" href="admin.php">📊 Admin Panel</a>
+                    <a class="nav-link text-warning small fw-bold m-0 p-0" href="manage_ban.php">🚫 Inmate Restrictions</a>
                 <?php endif; ?>
-                <span class="text-secondary small d-none d-md-inline">|</span>
+                <span class="text-secondary small d-none d-md-inline px-1">|</span>
                 <span class="text-light small">Signed in: <strong><?php echo htmlspecialchars($_SESSION['username']); ?></strong></span>
-                <a class="btn btn-sm btn-outline-danger px-3 py-1 text-xs" href="logout.php" style="font-size: 0.75rem;">Logout</a>
+                <a class="btn btn-sm btn-outline-danger px-2.5 py-0.5 align-middle" href="logout.php" style="font-size: 0.72rem; border-radius: 6px;">Logout</a>
             <?php else: ?>
-                <a class="btn btn-sm btn-outline-light px-3 py-1 text-xs" href="login.php" style="font-size: 0.75rem;">Internal Staff Sign In</a>
+                <span class="text-secondary small px-1">|</span>
+                <a class="btn btn-sm btn-outline-light px-2.5 py-1 align-middle" href="login.php" style="font-size: 0.72rem; border-radius: 6px;">Internal Staff Sign In</a>
             <?php endif; ?>
         </div>
     </div>
 </nav>
 
-<!-- AUTOMATED MASTER WRAPPER OPENING TAG: Centers page layouts executing below -->
+<!-- AUTOMATED MASTER WRAPPER OPENING TAG: Centers any page layout parameters next -->
 <div class="master-viewport-center-wrapper">
     <div class="master-content-limiter">
