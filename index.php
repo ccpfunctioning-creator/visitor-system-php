@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $photoPath = '';
+        $photoPath = '';
     if (!$errorMessage && isset($_FILES['cidPhoto']) && $_FILES['cidPhoto']['error'] === 0) {
         $targetDir = "uploads/";
         if (!file_exists($targetDir)) { mkdir($targetDir, 0777, true); }
@@ -52,8 +52,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetFilePath = $targetDir . $fileName;
         
         if (move_uploaded_file($_FILES['cidPhoto']['tmp_name'], $targetFilePath)) {
-            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-            $photoPath = $protocol . $_SERVER['HTTP_HOST'] . '/' . $targetFilePath;
+            // 🔥 Force strict HTTPS path architecture for cloud systems
+            $photoPath = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $targetFilePath;
         } else {
             $errorMessage = "⚠️ Failed to process and upload your identification document snapshot.";
         }
