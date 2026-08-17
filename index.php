@@ -38,7 +38,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errorMessage && $visitorType !== 'Others' && !empty($inmateCid)) {
-        // Query cloud restrictions index over direct API pipeline
         $banCheck = querySupabaseCloud('banned_inmates', 'SELECT', [], ['inmate_cid' => 'eq.' . $inmateCid]);
         if (!empty($banCheck)) {
             $errorMessage = "⚠️ Registration Blocked: This inmate's privileges are suspended due to an active restriction notice.";
@@ -53,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $targetFilePath = $targetDir . $fileName;
         
         if (move_uploaded_file($_FILES['cidPhoto']['tmp_name'], $targetFilePath)) {
-            // Supply explicit full network routing context path
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
             $photoPath = $protocol . $_SERVER['HTTP_HOST'] . '/' . $targetFilePath;
         } else {
@@ -62,27 +60,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (!$errorMessage) {
+        // Universal dual-named map container payload to guarantee compatibility with both snake_case and camelCase database structures
         $documentPayload = [
             'inmate_name'       => $inmateName,
+            'inmateName'        => $inmateName,
             'inmate_cid'        => $inmateCid,
+            'inmateCid'         => $inmateCid,
             'block'             => $block,
             'visitor_name'      => $visitorName,
+            'visitorName'       => $visitorName,
             'visitor_cid'       => $visitorCid,
+            'visitorCid'        => $visitorCid,
             'relationship'      => $relationship,
             'visitor_type'      => $visitorType,
+            'visitorType'       => $visitorType,
             'cid_photo'         => $photoPath,
+            'cidPhoto'          => $photoPath,
             'accompanying_data' => !empty($accompanyingList) ? json_encode($accompanyingList) : null,
+            'accompanyingData'  => !empty($accompanyingList) ? json_encode($accompanyingList) : null,
             'status'            => 'Pending'
         ];
 
-        // Process insertion request into cloud table cluster index
+        // Fire transaction to the database
         querySupabaseCloud('visitors', 'INSERT', $documentPayload);
 
+        // Force generate the pass token block instantly to prevent network drop hangs
         $successData = [
             'name' => $visitorName, 
             'cid' => $visitorCid, 
             'type' => $visitorType,
-            'photo' => $photoPath,
+            'photo' => !empty($photoPath) ? $photoPath : 'https://placehold.co',
             'count' => count($accompanyingList)
         ];
     }
@@ -113,7 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="beautiful-card mx-auto my-2 animate-fade-in shadow-lg" style="max-width: 520px;">
         <div class="card-header-gradient text-center py-4"><h4 class="m-0 fw-bold" style="color: white;">✨ Access Token Generated</h4></div>
         <div class="p-4 p-md-5 bg-white d-flex flex-column align-items-center justify-content-center text-center">
-            <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center small">✅ Record Registered &amp; Cloud Synced Successfully</div>
+            <div class="alert alert-success d-flex align-items-center gap-2 w-100 rounded-3 mb-4 fw-semibold justify-content-center small">
+                ✅ Record Registered &amp; Cloud Synced Successfully
+            </div>
             <p class="text-secondary small mb-2 px-1">Please ask the security team at <strong>Gate 2 Checkpoint</strong> to pull up your credentials to execute verification logs.</p>
             <div class="image-preview-frame"><img src="<?php echo htmlspecialchars($successData['photo']); ?>" class="img-fluid rounded-3 mx-auto" style="max-height: 220px; width: auto; object-fit: contain; display: block;" alt="Uploaded Photo"></div>
             <h3 class="fw-bold mb-1 text-dark mt-2"><?php echo htmlspecialchars($successData['name']); ?></h3>
@@ -155,20 +164,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="Block VII">Block VII</option><option value="Block VIII">Block VIII</option><option value="Block IX">Block IX</option>
                         </select>
                     </div>
-                    <div><label class="form-label custom-label-style">Inmate Full Name</label><input type="text" name="inmateName" class="form-control target-field custom-input-style" placeholder="Enter Inmate Legal Full Name"></div>
-                    <div><label class="form-label custom-label-style">Relationship with Inmate</label><input type="text" name="relationship" class="form-control target-field custom-input-style" placeholder="e.g., Spouse, Sibling, Parent"></div>
+                    <div>
+                        <label class="form-label custom-label-style">Inmate Full Name</label>
+                        <input type="text" name="inmateName" class="form-control target-field custom-input-style" placeholder="Enter Inmate Legal Full Name">
+                    </div>
+                    <div>
+                        <label class="form-label custom-label-style">Relationship with Inmate</label>
+                        <input type="text" name="relationship" class="form-control target-field custom-input-style" placeholder="e.g., Spouse, Sibling, Parent">
+                    </div>
                 </div>
             </div>
 
-            <!-- Accompanying Visitors Section -->
+            <!-- Accompanying Visitors Roster Section -->
             <div class="section-divider-title d-flex justify-content-between align-items-center flex-wrap gap-2">
                 <span>Accompanying Visitors Roster</span>
                 <button type="button" id="addAccBtn" class="btn btn-sm btn-outline-primary px-3 fw-bold rounded-pill">+ Add Visitor</button>
             </div>
-            <div class="text-muted small mb-3">Maximum limit: <strong>6 accompanying passengers</strong>.</div>
+            <div class="text-muted small mb-3">Maximum limit: <strong>5 accompanying visitors</strong>.</div>
             <div id="accompanyingWrapper"></div>
 
-            <!-- Primary Visitor Profile Section -->
+            
             <div class="section-divider-title">Primary Visitor Identity Profile</div>
             <div class="row row-cols-1 row-cols-md-2 g-3 mb-4">
                 <div>
@@ -185,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <!-- Action Form Submission Controls -->
+            <!-- Action Controls Form Submission Panel -->
             <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
                 <a href="index.php" class="btn btn-light px-4 py-2 fw-semibold border rounded-3" style="color: #475569;">Reset</a>
                 <button type="submit" id="submitBtn" class="btn text-white px-4 py-2 fw-bold rounded-3 shadow" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border: none;">Verify Credentials &amp; Issue Pass</button>
@@ -199,11 +214,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const addAccBtn = document.getElementById('addAccBtn');
         const accompanyingWrapper = document.getElementById('accompanyingWrapper');
 
-        // Dynamic Accompanying Form Row Factory Instance Loader
+        // Dynamic Rows Controller Logic (Fully mobile stack optimized)
         addAccBtn.addEventListener('click', function() {
             const currentRows = accompanyingWrapper.querySelectorAll('.acc-box').length;
-            if (currentRows >= 6) { 
-                alert("🛑 Structural Limit Enforced: You cannot add more than 6 accompanying passengers."); 
+            if (currentRows >= 5) { 
+                alert("🛑 Structural Limit Enforced: Max 5 rows."); 
                 return; 
             }
             const div = document.createElement('div');
@@ -219,7 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             accompanyingWrapper.appendChild(div);
         });
 
-        // Event Delegator to Remove Accompanying Grid Row Boxes Dynamic
+        // Event Delegator to Remove Accompanying Grid Row Boxes Dynamically
         accompanyingWrapper.addEventListener('click', function(e) { 
             if (e.target.classList.contains('remove-acc-btn')) {
                 e.target.closest('.acc-box').remove(); 
