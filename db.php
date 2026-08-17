@@ -1,56 +1,54 @@
 <?php
+// 🚀 DRIVERLESS CLOUD REST DATA EDGE ROUTER PIPELINE FOR SUPABASE
+define('SUPABASE_URL', 'https://icmjvsxjhqjvzvyyolry.supabase.co');
+
+// 💡 EXTREMELY IMPORTANT: Make sure to replace the placeholder key below 
+// with your actual long public "anon" public key string starting with "eyJhbG..."
+define('SUPABASE_KEY', 'sb_secret_18gPROtxsy8GsxIR4lP8og_tF3hN_Dk');
+
 /**
- * 🔒 SECURITY DISCLAIMER: Change these placeholder parameters to match your live 
- * Supabase Project configuration dashboard values before executing form inputs.
+ * Executes a driverless REST API request straight to your Supabase tables.
  */
-
-// 📍 1. API Edge Credentials (Used for front-facing integrations and web queries)
-define('SUPABASE_URL', 'https://supabase.co');
-// 💡 Copy the extremely long string from your "Secret keys" dashboard field box here [image_sAUAhY]
-define('SUPABASE_SECRET_KEY', 'sb_secret_18gPR0txsy8GsxIR4lP8og_tF3hN_Dk');
-
-// 🗄️ 2. Direct PostgreSQL Database URI Pipeline String Configuration
-// Found under: Project Settings ➔ Database ➔ Connection String
-$supabaseConnectionUri = 'postgresql://postgres.your-ref:pt8FXjKhAom9of7x@://supabase.com';
-
-try {
-    // Dynamically parse the Supabase connection string components cleanly into PDO variables
-    $dbParts = parse_url($supabaseConnectionUri);
+function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
+    $url = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . $tableName;
     
-    $host   = $dbParts['host'] ?? '';
-    $port   = $dbParts['port'] ?? 5432;
-    $user   = $dbParts['user'] ?? '';
-    $pass   = $dbParts['pass'] ?? '';
-    $dbname = ltrim($dbParts['path'] ?? '/postgres', '/');
+    // Append query filter parameters for selective record updates or lookups
+    if (!empty($filter)) {
+        $queryParams = [];
+        foreach ($filter as $key => $val) {
+            $queryParams[] = $key . '=' . urlencode($val);
+        }
+        $url .= '?' . implode('&', $queryParams);
+    }
 
-    // Establish a production database pipeline stream straight to your cloud infrastructure
-    $db = new PDO("pgsql:host=$host;port=$port;dbname=$dbname;sslmode=require", $user, $pass);
-    $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $ch = curl_init($url);
+    
+    // Set standard secure cloud authentication headers required by Supabase
+    $headers = [
+        'apikey: ' . SUPABASE_KEY,
+        'Authorization: Bearer ' . SUPABASE_KEY,
+        'Content-Type: application/json',
+        'Prefer: return=representation' // Forces Supabase to return processed rows
+    ];
 
-    // Auto-generate underlying storage structures matching your code architecture parameters
-    $db->exec("CREATE TABLE IF NOT EXISTS visitors (
-        id SERIAL PRIMARY KEY,
-        inmate_name TEXT,
-        inmate_cid TEXT,
-        block TEXT,
-        visitor_name TEXT NOT NULL,
-        visitor_cid TEXT NOT NULL,
-        relationship TEXT,
-        visitor_type TEXT NOT NULL,
-        cid_photo TEXT NOT NULL,
-        accompanying_data TEXT,
-        status TEXT DEFAULT 'Pending',
-        registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        verified_at TIMESTAMP
-    )");
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
-    $db->exec("CREATE TABLE IF NOT EXISTS banned_inmates (
-        id SERIAL PRIMARY KEY,
-        inmate_cid TEXT UNIQUE NOT NULL,
-        reason TEXT
-    )");
+    if ($action === 'INSERT') {
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    } elseif ($action === 'UPDATE') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PATCH');
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    } else {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+    }
 
-} catch (PDOException $e) {
-    die("Cloud structural initialization failed: " . $e->getMessage());
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $decodedData = json_decode($response, true);
+    return $decodedData ?? [];
 }
 ?>
