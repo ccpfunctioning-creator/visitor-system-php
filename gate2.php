@@ -28,12 +28,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_id'])) {
     ];
 
     querySupabaseCloud('visitors', 'UPDATE', $updatePayload, ['id' => 'eq.' . $actionId]);
-    $updateMessage = "✅ Log Successfully Updated: Status changed to <strong>{$newStatus}</strong>.";
+    $updateMessage = "✅ Log Successfully Updated: Clear Pass Status changed to <strong>{$newStatus}</strong>.";
     
-    // Automatically re-fetch target record
+    // Re-fetch target record
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['id' => 'eq.' . $actionId]);
     if (!empty($records) && is_array($records)) {
-        $searchResult = isset($records[0]) ? $records[0] : $records;
+        // Deep loop extraction fallback to break double nested array shells
+        while (isset($records[0]) && is_array($records[0])) {
+            $records = $records[0];
+        }
+        $searchResult = $records;
     }
     $searchAttempted = true;
 }
@@ -43,16 +47,20 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['visitor_cid' => 'eq.' . trim($searchQuery)]);
     
     if (!empty($records) && is_array($records)) {
-        // 🎯 STABLE FALLBACK UNPACKING: Force-extract index row 0 to clear lookup errors
-        $searchResult = isset($records[0]) ? $records[0] : $records;
+        // 🎯 DYNAMIC ROW SHELL UNPACKER: Strips nested arrays until reaching the raw record object
+        while (isset($records[0]) && is_array($records[0])) {
+            $records = $records[0];
+        }
+        $searchResult = $records;
     }
     $searchAttempted = true;
 }
 
-// 🔐 BULLETPROOF BACKEND FALLBACK FILTER: Cleans up the image URL string
+// 🔐 BULLETPROOF BACKEND FALLBACK FILTER: Cleans up the image URL string manually before drawing the img tags
 $displayPhotoUrl = 'https://placehold.co';
-if ($searchResult && !empty($searchResult['cid_photo'])) {
+if ($searchResult && is_array($searchResult) && !empty($searchResult['cid_photo'])) {
     $rawPath = $searchResult['cid_photo'];
+    
     if (strpos($rawPath, 'uploads/') !== false) {
         $cleanUploadPath = substr($rawPath, strpos($rawPath, 'uploads/'));
         $displayPhotoUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $cleanUploadPath;
@@ -71,7 +79,7 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
     
     <div class="p-4 bg-white">
         <?php if ($updateMessage): ?>
-            <div class="alert alert-success py-2.5 px-3 rounded-3 small fw-semibold mb-4"><?php echo $updateMessage; ?></div>
+            <div class="alert alert-success py-2.5 px-3 rounded-3 small fw-semibold mb-4 text-start"><?php echo $updateMessage; ?></div>
         <?php endif; ?>
 
         <!-- Search Box Console Input Form Configuration layout -->
@@ -84,7 +92,7 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
         </form>
 
         <?php if ($searchAttempted): ?>
-            <?php if ($searchResult && isset($searchResult['visitor_name'])): ?>
+            <?php if ($searchResult && is_array($searchResult) && isset($searchResult['visitor_name'])): ?>
                 <!-- Visitor Record Log Data Sheet Found Viewport Frame Box Container -->
                 <div class="section-container bg-light border p-3 rounded-3 animate-fade-in text-start">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 border-bottom pb-2">
@@ -153,7 +161,7 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
                         </div>
                     <?php endif; ?>
                 </div>
-            <?php else: ?>
+                <?php else: ?>
                 <!-- No Record Match Output Warning Notice Screen Wrapper -->
                 <div class="alert alert-danger text-center small fw-semibold m-0 py-3 rounded-3 animate-fade-in shadow-sm">
                     🔍 ACCESS REJECTED: No verified Gate 1 registration records found matching that Visitor CID reference token parameter.
