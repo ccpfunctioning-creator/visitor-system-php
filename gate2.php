@@ -28,16 +28,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_id'])) {
     ];
 
     querySupabaseCloud('visitors', 'UPDATE', $updatePayload, ['id' => 'eq.' . $actionId]);
-    $updateMessage = "✅ Log Successfully Updated: Clear Pass Status changed to <strong>{$newStatus}</strong>.";
+    $updateMessage = "✅ Log Successfully Updated: Status changed to <strong>{$newStatus}</strong>.";
     
     // Re-fetch target record
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['id' => 'eq.' . $actionId]);
     if (!empty($records) && is_array($records)) {
-        // Deep loop extraction fallback to break double nested array shells
-        while (isset($records[0]) && is_array($records[0])) {
-            $records = $records[0];
-        }
-        $searchResult = $records;
+        // Explicit single-step unpacking layer to avoid deep infinite parsing loops
+        $searchResult = isset($records[0]) ? $records[0] : $records;
     }
     $searchAttempted = true;
 }
@@ -47,20 +44,21 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['visitor_cid' => 'eq.' . trim($searchQuery)]);
     
     if (!empty($records) && is_array($records)) {
-        // 🎯 DYNAMIC ROW SHELL UNPACKER: Strips nested arrays until reaching the raw record object
-        while (isset($records[0]) && is_array($records[0])) {
-            $records = $records[0];
+        // 🎯 STABLE DIRECT UNPACKING: Safely snaps the first array row index item out
+        $searchResult = isset($records[0]) ? $records[0] : $records;
+        
+        // Double-check if still nested due to database wrapper layers
+        if (isset($searchResult[0]) && is_array($searchResult[0])) {
+            $searchResult = $searchResult[0];
         }
-        $searchResult = $records;
     }
     $searchAttempted = true;
 }
 
-// 🔐 BULLETPROOF BACKEND FALLBACK FILTER: Cleans up the image URL string manually before drawing the img tags
+// 🔐 BULLETPROOF BACKEND FALLBACK FILTER: Cleans up the image URL string
 $displayPhotoUrl = 'https://placehold.co';
 if ($searchResult && is_array($searchResult) && !empty($searchResult['cid_photo'])) {
     $rawPath = $searchResult['cid_photo'];
-    
     if (strpos($rawPath, 'uploads/') !== false) {
         $cleanUploadPath = substr($rawPath, strpos($rawPath, 'uploads/'));
         $displayPhotoUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $cleanUploadPath;
@@ -92,7 +90,7 @@ if ($searchResult && is_array($searchResult) && !empty($searchResult['cid_photo'
         </form>
 
         <?php if ($searchAttempted): ?>
-            <?php if ($searchResult && is_array($searchResult) && isset($searchResult['visitor_name'])): ?>
+            <?php if ($searchResult && is_array($searchResult) && (isset($searchResult['visitor_name']) || isset($searchResult['visitorName']))): ?>
                 <!-- Visitor Record Log Data Sheet Found Viewport Frame Box Container -->
                 <div class="section-container bg-light border p-3 rounded-3 animate-fade-in text-start">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 border-bottom pb-2">
@@ -110,20 +108,23 @@ if ($searchResult && is_array($searchResult) && !empty($searchResult['cid_photo'
                         <div class="mx-auto border p-1 rounded bg-white shadow-sm mb-2" style="width: 150px; height: 180px; overflow: hidden;">
                             <img src="<?php echo htmlspecialchars($displayPhotoUrl); ?>" class="w-100 h-100" style="object-fit: cover;" alt="Visitor Pass Profile ID Document">
                         </div>
-                        <h5 class="fw-bold text-dark m-0"><?php echo htmlspecialchars($searchResult['visitor_name']); ?></h5>
-                        <small class="font-monospace text-muted">CID Reference No: <?php echo htmlspecialchars($searchResult['visitor_cid']); ?></small>
+                        <h5 class="fw-bold text-dark m-0"><?php echo htmlspecialchars($searchResult['visitor_name'] ?? $searchResult['visitorName'] ?? ''); ?></h5>
+                        <small class="font-monospace text-muted">CID Reference No: <?php echo htmlspecialchars($searchResult['visitor_cid'] ?? $searchResult['visitorCid'] ?? ''); ?></small>
                     </div>
 
                     <div class="row row-cols-2 g-2 text-start small border-top pt-2">
-                        <div><span class="text-secondary d-block">Classification</span><strong>💼 <?php echo htmlspecialchars($searchResult['visitor_type']); ?></strong></div>
-                        <div><span class="text-secondary d-block">Target Inmate CID</span><strong>🆔 <?php echo htmlspecialchars($searchResult['inmate_cid'] ?? 'N/A (Official)'); ?></strong></div>
-                        <div class="mt-2"><span class="text-secondary d-block">Inmate Full Name</span><strong>👤 <?php echo htmlspecialchars($searchResult['inmate_name'] ?? 'N/A'); ?></strong></div>
+                        <div><span class="text-secondary d-block">Classification</span><strong>💼 <?php echo htmlspecialchars($searchResult['visitor_type'] ?? $searchResult['visitorType'] ?? ''); ?></strong></div>
+                        <div><span class="text-secondary d-block">Target Inmate CID</span><strong>🆔 <?php echo htmlspecialchars($searchResult['inmate_cid'] ?? $searchResult['inmateCid'] ?? 'N/A'); ?></strong></div>
+                        <div class="mt-2"><span class="text-secondary d-block">Inmate Full Name</span><strong>👤 <?php echo htmlspecialchars($searchResult['inmate_name'] ?? $searchResult['inmateName'] ?? 'N/A'); ?></strong></div>
                         <div class="mt-2"><span class="text-secondary d-block">Target Cell Location</span><strong>🏢 <?php echo htmlspecialchars($searchResult['block'] ?? 'N/A'); ?></strong></div>
                     </div>
 
-                    <!-- Linked accompanying visitors roster scanner engine wrapper row loops mapping -->
-                    <?php if (!empty($searchResult['accompanying_data'])): ?>
-                        <?php $accList = json_decode($searchResult['accompanying_data'], true); ?>
+                    <!-- Linked accompanying visitors roster engine wrapper row loops mapping -->
+                    <?php if (!empty($searchResult['accompanying_data']) || !empty($searchResult['accompanyingData'])): ?>
+                        <?php 
+                            $rawAccData = $searchResult['accompanying_data'] ?? $searchResult['accompanyingData'] ?? '[]';
+                            $accList = json_decode($rawAccData, true); 
+                        ?>
                         <?php if (!empty($accList) && is_array($accList)): ?>
                             <div class="mt-3 border-top pt-2 text-start">
                                 <span class="text-secondary d-block small mb-1">Linked Passengers Roster:</span>
