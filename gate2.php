@@ -28,9 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_id'])) {
     ];
 
     querySupabaseCloud('visitors', 'UPDATE', $updatePayload, ['id' => 'eq.' . $actionId]);
-    $updateMessage = "✅ Log Successfully Updated: Clear Pass Status changed to <strong>{$newStatus}</strong>.";
+    $updateMessage = "✅ Log Successfully Updated: Status changed to <strong>{$newStatus}</strong>.";
     
-    // Automatically re-fetch target record to present freshly updated data values
+    // Automatically re-fetch target record
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['id' => 'eq.' . $actionId]);
     if (!empty($records) && is_array($records)) {
         $searchResult = isset($records[0]) ? $records[0] : $records;
@@ -43,18 +43,16 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['visitor_cid' => 'eq.' . trim($searchQuery)]);
     
     if (!empty($records) && is_array($records)) {
-        // 🎯 UNPACK MATRIX: Extracts row index 0 to eliminate data-lookup errors
+        // 🎯 STABLE FALLBACK UNPACKING: Force-extract index row 0 to clear lookup errors
         $searchResult = isset($records[0]) ? $records[0] : $records;
     }
     $searchAttempted = true;
 }
 
-// 🔐 BULLETPROOF BACKEND FALLBACK FILTER: Cleans up the image URL string manually before drawing the img tags
+// 🔐 BULLETPROOF BACKEND FALLBACK FILTER: Cleans up the image URL string
 $displayPhotoUrl = 'https://placehold.co';
 if ($searchResult && !empty($searchResult['cid_photo'])) {
     $rawPath = $searchResult['cid_photo'];
-    
-    // If the path is a relative system link or starts with a broken container host, extract just the uploads part
     if (strpos($rawPath, 'uploads/') !== false) {
         $cleanUploadPath = substr($rawPath, strpos($rawPath, 'uploads/'));
         $displayPhotoUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $cleanUploadPath;
@@ -78,7 +76,7 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
 
         <!-- Search Box Console Input Form Configuration layout -->
         <form method="GET" action="gate2.php" class="mb-4">
-            <label class="form-label custom-label-style">Scan or Enter Visitor National CID</label>
+            <label class="form-label custom-label-style text-start d-block">Scan or Enter Visitor National CID</label>
             <div class="input-group">
                 <input type="text" name="search" class="form-control custom-input-style" placeholder="Type CID number to parse query logs..." value="<?php echo htmlspecialchars($searchQuery); ?>" required>
                 <button type="submit" class="btn text-white px-4 fw-bold" style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); border-radius: 0 10px 10px 0 !important;">Verify</button>
@@ -86,7 +84,7 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
         </form>
 
         <?php if ($searchAttempted): ?>
-            <?php if ($searchResult && is_array($searchResult)): ?>
+            <?php if ($searchResult && isset($searchResult['visitor_name'])): ?>
                 <!-- Visitor Record Log Data Sheet Found Viewport Frame Box Container -->
                 <div class="section-container bg-light border p-3 rounded-3 animate-fade-in text-start">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 border-bottom pb-2">
@@ -104,12 +102,12 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
                         <div class="mx-auto border p-1 rounded bg-white shadow-sm mb-2" style="width: 150px; height: 180px; overflow: hidden;">
                             <img src="<?php echo htmlspecialchars($displayPhotoUrl); ?>" class="w-100 h-100" style="object-fit: cover;" alt="Visitor Pass Profile ID Document">
                         </div>
-                        <h5 class="fw-bold text-dark m-0"><?php echo htmlspecialchars($searchResult['visitor_name'] ?? ''); ?></h5>
-                        <small class="font-monospace text-muted">CID Reference No: <?php echo htmlspecialchars($searchResult['visitor_cid'] ?? ''); ?></small>
+                        <h5 class="fw-bold text-dark m-0"><?php echo htmlspecialchars($searchResult['visitor_name']); ?></h5>
+                        <small class="font-monospace text-muted">CID Reference No: <?php echo htmlspecialchars($searchResult['visitor_cid']); ?></small>
                     </div>
 
                     <div class="row row-cols-2 g-2 text-start small border-top pt-2">
-                        <div><span class="text-secondary d-block">Classification</span><strong>💼 <?php echo htmlspecialchars($searchResult['visitor_type'] ?? ''); ?></strong></div>
+                        <div><span class="text-secondary d-block">Classification</span><strong>💼 <?php echo htmlspecialchars($searchResult['visitor_type']); ?></strong></div>
                         <div><span class="text-secondary d-block">Target Inmate CID</span><strong>🆔 <?php echo htmlspecialchars($searchResult['inmate_cid'] ?? 'N/A (Official)'); ?></strong></div>
                         <div class="mt-2"><span class="text-secondary d-block">Inmate Full Name</span><strong>👤 <?php echo htmlspecialchars($searchResult['inmate_name'] ?? 'N/A'); ?></strong></div>
                         <div class="mt-2"><span class="text-secondary d-block">Target Cell Location</span><strong>🏢 <?php echo htmlspecialchars($searchResult['block'] ?? 'N/A'); ?></strong></div>
@@ -166,3 +164,5 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
 </div>
 </div>
 </div>
+</body>
+</html>
