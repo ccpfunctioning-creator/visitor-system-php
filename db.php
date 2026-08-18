@@ -1,9 +1,9 @@
 <?php
 // 🚀 UNIVERSAL SUPABASE API BRIDGE ENGINE WITH AUTOMATIC ARRAY UNPACKING
-define('SUPABASE_URL', 'https://supabase.co');
+define('SUPABASE_URL', 'https://icmjvsxjhqjvzvyyolry.supabase.co');
 
 // 💡 PASTE YOUR EXTREMELY LONG PUBLIC ANON KEY HERE (Starts with eyJhbG...)
-define('SUPABASE_KEY', 'PASTE_YOUR_EXTREMELY_LONG_ANON_PUBLIC_KEY_STRING_HERE');
+define('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljbWp2c3hqaHFqdnp2eXlvbHJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Mjg4NTQsImV4cCI6MjEwMjUwNDg1NH0.X_jecxrmze9D1g0iCgbzLJxYlJyRkFVnMxdAnOwFvpg');
 
 function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
     $url = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . $tableName;
