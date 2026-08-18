@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_id'])) {
     // Automatically re-fetch target record to present freshly updated data values on the viewport panel
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['id' => 'eq.' . $actionId]);
     if (!empty($records) && is_array($records)) {
+        // Extract the raw single object row from the outer list array
         $searchResult = isset($records[0]) ? $records[0] : $records;
     }
     $searchAttempted = true;
@@ -43,10 +44,24 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['visitor_cid' => 'eq.' . trim($searchQuery)]);
     
     if (!empty($records) && is_array($records)) {
-        // Extract the absolute first matching data row dictionary block from the numeric container list array
+        // 🎯 FIX: Extract the first matching data row dictionary block from the numeric wrapper array
         $searchResult = isset($records[0]) ? $records[0] : $records;
     }
     $searchAttempted = true;
+}
+
+// 🔐 BULLETPROOF BACKEND FALLBACK FILTER: Cleans up the image URL string manually before drawing the img tags
+$displayPhotoUrl = 'https://placehold.co';
+if ($searchResult && !empty($searchResult['cid_photo'])) {
+    $rawPath = $searchResult['cid_photo'];
+    
+    // If the path is a relative system link or starts with a broken container host, extract just the uploads part
+    if (strpos($rawPath, 'uploads/') !== false) {
+        $cleanUploadPath = substr($rawPath, strpos($rawPath, 'uploads/'));
+        $displayPhotoUrl = 'https://' . $_SERVER['HTTP_HOST'] . '/' . $cleanUploadPath;
+    } else {
+        $displayPhotoUrl = str_replace('http://', 'https://', $rawPath);
+    }
 }
 ?>
 
@@ -72,7 +87,7 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
         </form>
 
         <?php if ($searchAttempted): ?>
-            <?php if ($searchResult): ?>
+            <?php if ($searchResult && is_array($searchResult)): ?>
                 <!-- Visitor Record Log Data Sheet Found Viewport Frame Box Container -->
                 <div class="section-container bg-light border p-3 rounded-3 animate-fade-in">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 border-bottom pb-2">
@@ -88,14 +103,14 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
 
                     <div class="text-center mb-3">
                         <div class="mx-auto border p-1 rounded bg-white shadow-sm mb-2" style="width: 150px; height: 180px; overflow: hidden;">
-                            <img src="<?php echo htmlspecialchars($searchResult['cid_photo'] ?? 'https://placehold.co'); ?>" class="w-100 h-100" style="object-fit: cover;" alt="Visitor Pass Profile ID Document">
+                            <img src="<?php echo htmlspecialchars($displayPhotoUrl); ?>" class="w-100 h-100" style="object-fit: cover;" alt="Visitor Pass Profile ID Document">
                         </div>
-                        <h5 class="fw-bold text-dark m-0"><?php echo htmlspecialchars($searchResult['visitor_name']); ?></h5>
-                        <small class="font-monospace text-muted">CID Reference No: <?php echo htmlspecialchars($searchResult['visitor_cid']); ?></small>
+                        <h5 class="fw-bold text-dark m-0"><?php echo htmlspecialchars($searchResult['visitor_name'] ?? ''); ?></h5>
+                        <small class="font-monospace text-muted">CID Reference No: <?php echo htmlspecialchars($searchResult['visitor_cid'] ?? ''); ?></small>
                     </div>
 
                     <div class="row row-cols-2 g-2 text-start small border-top pt-2">
-                        <div><span class="text-secondary d-block">Classification</span><strong>💼 <?php echo htmlspecialchars($searchResult['visitor_type']); ?></strong></div>
+                        <div><span class="text-secondary d-block">Classification</span><strong>💼 <?php echo htmlspecialchars($searchResult['visitor_type'] ?? ''); ?></strong></div>
                         <div><span class="text-secondary d-block">Target Inmate CID</span><strong>🆔 <?php echo htmlspecialchars($searchResult['inmate_cid'] ?? 'N/A (Official)'); ?></strong></div>
                         <div class="mt-2"><span class="text-secondary d-block">Inmate Full Name</span><strong>👤 <?php echo htmlspecialchars($searchResult['inmate_name'] ?? 'N/A'); ?></strong></div>
                         <div class="mt-2"><span class="text-secondary d-block">Target Cell Location</span><strong>🏢 <?php echo htmlspecialchars($searchResult['block'] ?? 'N/A'); ?></strong></div>
@@ -104,14 +119,14 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
                     <!-- Linked accompanying visitors roster scanner engine wrapper row loops mapping -->
                     <?php if (!empty($searchResult['accompanying_data'])): ?>
                         <?php $accList = json_decode($searchResult['accompanying_data'], true); ?>
-                        <?php if (!empty($accList)): ?>
+                        <?php if (!empty($accList) && is_array($accList)): ?>
                             <div class="mt-3 border-top pt-2 text-start">
                                 <span class="text-secondary d-block small mb-1">Linked Passengers Roster:</span>
                                 <div class="bg-white p-2 border rounded-3 small" style="max-height: 120px; overflow-y: auto;">
                                     <?php foreach ($accList as $acc): ?>
                                         <div class="d-flex justify-content-between font-monospace border-bottom py-1 text-dark" style="font-size: 0.8rem;">
-                                            <span>👥 <?php echo htmlspecialchars($acc['name']); ?></span>
-                                            <span class="text-muted">CID: <?php echo htmlspecialchars($acc['cid']); ?> (<?php echo htmlspecialchars($acc['relation']); ?>)</span>
+                                            <span>👥 <?php echo htmlspecialchars($acc['name'] ?? ''); ?></span>
+                                            <span class="text-muted">CID: <?php echo htmlspecialchars($acc['cid'] ?? ''); ?> (<?php echo htmlspecialchars($acc['relation'] ?? ''); ?>)</span>
                                         </div>
                                     <?php endforeach; ?>
                                 </div>
