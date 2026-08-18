@@ -30,10 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action_id'])) {
     querySupabaseCloud('visitors', 'UPDATE', $updatePayload, ['id' => 'eq.' . $actionId]);
     $updateMessage = "✅ Log Successfully Updated: Clear Pass Status changed to <strong>{$newStatus}</strong>.";
     
-    // Automatically re-fetch target record to present freshly updated data values on the viewport panel
+    // Automatically re-fetch target record to present freshly updated data values
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['id' => 'eq.' . $actionId]);
     if (!empty($records) && is_array($records)) {
-        // Extract the raw single object row from the outer list array
         $searchResult = isset($records[0]) ? $records[0] : $records;
     }
     $searchAttempted = true;
@@ -44,7 +43,7 @@ if (!empty($searchQuery) && $_SERVER['REQUEST_METHOD'] === 'GET') {
     $records = querySupabaseCloud('visitors', 'SELECT', [], ['visitor_cid' => 'eq.' . trim($searchQuery)]);
     
     if (!empty($records) && is_array($records)) {
-        // 🎯 FIX: Extract the first matching data row dictionary block from the numeric wrapper array
+        // 🎯 UNPACK MATRIX: Extracts row index 0 to eliminate data-lookup errors
         $searchResult = isset($records[0]) ? $records[0] : $records;
     }
     $searchAttempted = true;
@@ -89,7 +88,7 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
         <?php if ($searchAttempted): ?>
             <?php if ($searchResult && is_array($searchResult)): ?>
                 <!-- Visitor Record Log Data Sheet Found Viewport Frame Box Container -->
-                <div class="section-container bg-light border p-3 rounded-3 animate-fade-in">
+                <div class="section-container bg-light border p-3 rounded-3 animate-fade-in text-start">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 border-bottom pb-2">
                         <span class="fw-bold text-dark small">Ecosystem Transaction Logs Grid</span>
                         <?php 
@@ -167,5 +166,3 @@ if ($searchResult && !empty($searchResult['cid_photo'])) {
 </div>
 </div>
 </div>
-</body>
-</html>
