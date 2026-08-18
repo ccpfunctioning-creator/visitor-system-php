@@ -1,9 +1,9 @@
 <?php
-// 🚀 UNIVERSAL SUPABASE API BRIDGE ENGINE
-define('SUPABASE_URL', 'https://icmjvsxjhqjvzvyyolry.supabase.co');
+// 🚀 UNIVERSAL SUPABASE API BRIDGE ENGINE WITH AUTOMATIC ARRAY UNPACKING
+define('SUPABASE_URL', 'https://supabase.co');
 
 // 💡 PASTE YOUR EXTREMELY LONG PUBLIC ANON KEY HERE (Starts with eyJhbG...)
-define('SUPABASE_KEY', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImljbWp2c3hqaHFqdnp2eXlvbHJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5Mjg4NTQsImV4cCI6MjEwMjUwNDg1NH0.X_jecxrmze9D1g0iCgbzLJxYlJyRkFVnMxdAnOwFvpg');
+define('SUPABASE_KEY', 'PASTE_YOUR_EXTREMELY_LONG_ANON_PUBLIC_KEY_STRING_HERE');
 
 function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
     $url = rtrim(SUPABASE_URL, '/') . '/rest/v1/' . $tableName;
@@ -49,19 +49,12 @@ function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
         echo "<div class='alert alert-danger font-monospace small m-3'><strong>Supabase API Error ($httpCode):</strong> " . htmlspecialchars($response) . "</div>";
     }
 
-    // 🔐 BULLETPROOF LINK CONVERTER: Deep-parses the array to force convert any http reference paths to strict https parameters
+    // 🔐 AUTOMATIC ROW INDEX UNPACKER & HTTPS CONVERTER
     if (!empty($decodedData) && is_array($decodedData)) {
-        // Check if it is a list of rows
-        if (isset($decodedData[0]) && is_array($decodedData[0])) {
-            foreach ($decodedData as &$row) {
-                if (!empty($row['cid_photo'])) {
-                    $row['cid_photo'] = str_replace('http://', 'https://', $row['cid_photo']);
-                }
-            }
-        } else {
-            // Check if it is a single direct object row
-            if (!empty($decodedData['cid_photo'])) {
-                $decodedData['cid_photo'] = str_replace('http://', 'https://', $decodedData['cid_photo']);
+        // If it's a SELECT action and returns an array of rows, fix the image URLs
+        foreach ($decodedData as &$row) {
+            if (is_array($row) && !empty($row['cid_photo'])) {
+                $row['cid_photo'] = str_replace('http://', 'https://', $row['cid_photo']);
             }
         }
     }
@@ -69,4 +62,3 @@ function querySupabaseCloud($tableName, $action, $payload = [], $filter = []) {
     return $decodedData ?? [];
 }
 ?>
-
